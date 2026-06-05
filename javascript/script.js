@@ -1,5 +1,5 @@
 /**
- * script.js - Arquivo Controlador de Renderização e Fluxo Logístico
+ * script.js - Controlador de Renderização, Proteção de Rotas e Impressão Integral
  */
 document.addEventListener('DOMContentLoaded', () => {
     // Verificação de segurança de acesso
@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
 
+    // Retorna a tabela correta baseada no fluxo ativo
     function obterTabelaAtiva() {
         if (fluxoAtivo === 'cadastro') return document.getElementById('tabela-catalogo');
         if (fluxoAtivo === 'corte') return document.getElementById('tabela-corte');
@@ -177,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         travarBotoesLimpezaVazios();
     });
 
-    // Renderização das Tabelas no Painel
+    // Renderização das Tabelas no Painel (Visualização Limitada do Usuário)
     function renderizarCatalogo() {
         corpoCatalogo.innerHTML = '';
         const itens = DB.getCatalogo();
@@ -199,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             corpoMovimentacoes.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#a0aec0;">Sem movimentações registradas.</td></tr>`;
             return;
         }
-        // Exibe em tela apenas os 5 lançamentos mais recentes
+        // Exibe em tela estritamente os 5 lançamentos mais recentes
         const top5 = [...listaFull].reverse().slice(0, 5);
         top5.forEach(m => {
             const tr = document.createElement('tr');
@@ -248,6 +249,41 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             corpoCorte.appendChild(tr);
         });
+    }
+
+    /**
+     * RETORNA A TABELA INTEGRAL COMPLETA (SEM FILTROS DE TELA) PARA EXPORTAÇÃO E IMPRESSÃO
+     */
+    function gerarTabelaCompletaParaExportacao() {
+        if (fluxoAtivo === 'cadastro') return document.getElementById('tabela-catalogo');
+        if (fluxoAtivo === 'corte') return document.getElementById('tabela-corte');
+
+        // Se for histórico, cria uma estrutura de tabela na memória com TODOS os dados
+        const tabelaVirtual = document.createElement('table');
+        tabelaVirtual.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Item</th>
+                    <th>Operação</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        const tbody = tabelaVirtual.querySelector('tbody');
+        const todosMovimentos = DB.getMovimentacoes();
+
+        if(todosMovimentos.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4">Sem movimentações registradas.</td></tr>`;
+        } else {
+            [...todosMovimentos].reverse().forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${m.data}</td><td><strong>${m.insumo}</strong></td><td>${m.tipo}</td><td>${m.quantidade}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        return tabelaVirtual;
     }
 
     // Deleção Seletiva e Modais Contextuais
@@ -317,36 +353,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 850);
     });
 
-    // Envio por E-mail Corporativo e Exportação de Arquivos
+    // Envio por E-mail Corporativo e Exportação de Arquivos Completos
     document.getElementById('form-exportar-email').addEventListener('submit', (e) => {
         e.preventDefault();
         if (!validarFormularioCampos(e.target) || !emailValidadoOK) return;
 
         const formato = e.target.querySelector('input[name="formato-doc"]:checked').value;
         const eAddress = inputEmailDestino.value.trim();
-        const tabelaAlvo = obterTabelaAtiva();
+        const tabelaAlvoCompleta = gerarTabelaCompletaParaExportacao();
         const hashArquivo = `Relatorio_${fluxoAtivo.toUpperCase()}_${Date.now()}`;
 
         if (formato === 'EXCEL' || formato === 'AMBOS') {
-            const wb = XLSX.utils.table_to_book(tabelaAlvo, { sheet: "Inventario" });
+            const wb = XLSX.utils.table_to_book(tabelaAlvoCompleta, { sheet: "Inventario" });
             XLSX.writeFile(wb, `${hashArquivo}.xlsx`);
         }
         if (formato === 'PDF' || formato === 'AMBOS') {
             const opcoes = { margin: 12, filename: `${hashArquivo}.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-            html2pdf().set(opcoes).from(tabelaAlvo).save();
+            html2pdf().set(opcoes).from(tabelaAlvoCompleta).save();
         }
 
         let textoRelatorio = "";
-        const linhas = tabelaAlvo.querySelectorAll("tr");
+        const linhas = tabelaAlvoCompleta.querySelectorAll("tr");
         linhas.forEach(l => {
             const celulas = l.querySelectorAll("th, td");
             textoRelatorio += Array.from(celulas).map(c => c.textContent.trim()).filter(t => t !== "🗑️").join(" | ") + "\n";
         });
 
-        const assuntoEmail = encodeURIComponent(`📊 Relatório Consolidado - Módulo: ${fluxoAtivo.toUpperCase()}`);
+        const assuntoEmail = encodeURIComponent(`📊 Relatório Consolidado Completo - Módulo: ${fluxoAtivo.toUpperCase()}`);
         const corpoEmail = encodeURIComponent(
-            `Prezado(a),\n\nSegue em anexo o relatório extraído do painel.\n\n` +
-            `=== DADOS DA TABELA ATIVA ===\n${textoRelatorio}=============================\n\n` +
+            `Prezado(a),\n\nSegue o relatório completo extraído do banco de dados permanente.\n\n` +
+            `=== DADOS COMPLETOS HISTÓRICOS ===\n${textoRelatorio}=============================\n\n` +
             `Extraído em: ${formatarData()}\nChave Única: ${hashArquivo}`
         );
 
@@ -356,7 +392,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-trigger-email').addEventListener('click', () => { modalEmail.classList.add('active'); inputEmailDestino.focus(); });
     document.getElementById('btn-email-cancel').addEventListener('click', () => { modalEmail.classList.remove('active'); document.getElementById('form-exportar-email').reset(); iconEmailStatus.textContent = '⚪'; });
-    document.getElementById('btn-imprimir').addEventListener('click', () => window.print());
+    
+    // SISTEMA INTELIGENTE DE IMPRESSÃO INTEGRAL SEM LIMITES
+    document.getElementById('btn-imprimir').addEventListener('click', () => {
+        if (fluxoAtivo !== 'requisicao' && fluxoAtivo !== 'descarte' && fluxoAtivo !== 'retorno') {
+            // Para catálogo e corte, a tabela em tela já é completa por padrão
+            window.print();
+            return;
+        }
+
+        // Caso seja histórico, gera a tabela de auditoria completa na memória e injeta temporariamente para o driver de impressão
+        const tabelaCompleta = gerarTabelaCompletaParaExportacao();
+        tabelaCompleta.classList.add('table-print-temp');
+        
+        // Estilização inline temporária para forçar a visibilidade absoluta apenas no spooler de impressão
+        const estiloTemp = document.createElement('style');
+        estiloTemp.innerHTML = `
+            @media print {
+                .no-print, .modal-overlay, .panel-footer, .btn-clear-individual, nav, .grid, .main-header { display: none !important; }
+                body { background: white; padding: 0; margin: 0; }
+                .table-print-temp { width: 100% !important; display: table !important; border-collapse: collapse !important; font-family: sans-serif; font-size: 11px; }
+                .table-print-temp th, .table-print-temp td { border: 1px solid #cbd5e0 !important; padding: 8px !important; text-align: left !important; }
+                .table-print-temp th { background-color: #edf2f7 !important; font-weight: bold; }
+            }
+            @media screen { .table-print-temp { display: none !important; } }
+        `;
+
+        document.body.appendChild(tabelaCompleta);
+        document.body.appendChild(estiloTemp);
+        
+        // Dispara o driver nativo do sistema operacional
+        window.print();
+
+        // Destrói os elementos fantasmas pós-impressão mantendo a interface limpa e reativa
+        setTimeout(() => {
+            tabelaCompleta.remove();
+            estiloTemp.remove();
+        }, 1000);
+    });
 
     // Inicialização da Viewport
     atualizarDropdownsItens();

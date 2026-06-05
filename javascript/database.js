@@ -1,5 +1,5 @@
 /**
- * database.js - Abstração e Gerenciamento do LocalStorage
+ * database.js - Abstração estável do LocalStorage
  */
 const DB = {
     getCatalogo: () => JSON.parse(localStorage.getItem('wms_catalogo') || '[]'),

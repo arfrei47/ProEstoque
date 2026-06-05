@@ -21,14 +21,13 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            /* Imagem profissional com temática de logística, estoque e suprimentos */
             background: linear-gradient(rgba(26, 32, 44, 0.85), rgba(26, 32, 44, 0.85)), 
                         url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
             background-size: cover;
         }
 
         .alert-banner {
-            background: rgba(237, 137, 54, 0.2);
+            background: rgba(237, 137, 54, 0.25);
             border: 2px solid #ed8936;
             backdrop-filter: blur(10px);
             color: #fff;
@@ -39,7 +38,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             margin: 20px auto 0 auto;
             width: 90%;
-            max-width: 500px;
+            max-width: 550px;
             border-radius: 8px;
         }
 
@@ -92,7 +91,7 @@
 </head>
 <body>
 
-    <!-- Widget Chamativo de Contagem Física -->
+    <!-- Banner Informativo de Contagem Baseado no dia 12/05/2026 -->
     <div class="alert-banner" id="banner-contagem-index">
         🗓️ Carregando cronograma de inventário...
     </div>
@@ -113,7 +112,6 @@
                 </select>
             </div>
 
-            <!-- Campo de Senha condicional via JS -->
             <div class="form-group" id="password-area">
                 <label for="input-senha">Senha Autenticadora</label>
                 <input type="password" id="input-senha" placeholder="Digite a chave master">
@@ -128,22 +126,15 @@
     </footer>
 
     <script>
-        // DB utilitário em linha para a tela de login rodar o banner de dias restantes
-        const getUltimaData = () => {
-            try {
-                const c = JSON.parse(localStorage.getItem('wms_contagens') || '{}');
-                const datas = Object.values(c).map(v => new Date(v.dataValidacao.split(' ')[0].split('/').reverse().join('-')));
-                return datas.length ? new Date(Math.max(...datas)) : null;
-            } catch { return null; }
-        };
-
-        function atualizarBanner(idElemento) {
+        function calcularDiasRestantes(idElemento) {
             const el = document.getElementById(idElemento);
-            const ultimaValidacao = getUltimaData();
-            const baseData = ultimaValidacao ? ultimaValidacao : new Date();
             
-            const proximaContagem = new Date(baseData);
-            proximaContagem.setDate(baseData.getDate() + 7); // Ciclo de inventário a cada 7 dias
+            // Base fixada estritamente em 12/05/2026 conforme solicitado
+            const ultimaContagem = new Date(2026, 4, 12); 
+            
+            // Intervalo padrão de conformidade cíclica (7 dias)
+            const proximaContagem = new Date(ultimaContagem);
+            proximaContagem.setDate(ultimaContagem.getDate() + 7); 
             
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
@@ -153,7 +144,7 @@
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             if (diffDays <= 0) {
-                el.innerHTML = `🚨 ATENÇÃO: A Contagem Física Geral deve ser realizada HOJE!`;
+                el.innerHTML = `🚨 ATENÇÃO: Contagem Física Geral pendente! Deveria ter sido realizada em ${proximaContagem.toLocaleDateString('pt-BR')}.`;
                 el.style.background = "rgba(229, 62, 62, 0.9)";
                 el.style.borderColor = "#e53e3e";
             } else {
@@ -162,7 +153,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            atualizarBanner('banner-contagem-index');
+            calcularDiasRestantes('banner-contagem-index');
             const select = document.getElementById('perfil-select');
             const pwdArea = document.getElementById('password-area');
             const senhaInput = document.getElementById('input-senha');
@@ -180,14 +171,11 @@
 
             document.getElementById('form-auth').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const perfil = select.value;
-                if(perfil === 'administrador') {
-                    if(senhaInput.value !== '0448000363') {
-                        alert('❌ Senha de Administrador Incorreta!');
-                        return;
-                    }
+                if(select.value === 'administrador' && senhaInput.value !== '0448000363') {
+                    alert('❌ Senha de Administrador Incorreta!');
+                    return;
                 }
-                sessionStorage.setItem('perfil_ativo', perfil);
+                sessionStorage.setItem('perfil_ativo', select.value);
                 window.location.href = 'dashboard.html';
             });
         });

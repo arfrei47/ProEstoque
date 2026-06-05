@@ -4,102 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WMS Control - Autenticação</title>
-    <style>
-        :root {
-            --primary: #2b6cb0;
-            --primary-hover: #2c5282;
-            --dark: #1a202c;
-            --light: #f7fafc;
-            --border: #e2e8f0;
-            --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            background: linear-gradient(rgba(26, 32, 44, 0.85), rgba(26, 32, 44, 0.85)), 
-                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-            background-size: cover;
-        }
-
-        .alert-banner {
-            background: rgba(237, 137, 54, 0.25);
-            border: 2px solid #ed8936;
-            backdrop-filter: blur(10px);
-            color: #fff;
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            margin: 20px auto 0 auto;
-            width: 90%;
-            max-width: 550px;
-            border-radius: 8px;
-        }
-
-        .login-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 450px;
-            margin: auto;
-        }
-
-        .login-header { text-align: center; margin-bottom: 30px; }
-        .login-header h1 { color: var(--dark); font-size: 1.8rem; margin-bottom: 5px; }
-        .login-header p { color: #718096; font-size: 0.95rem; }
-
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 0.9rem; }
-        .form-group select, .form-group input {
-            width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 6px;
-            font-size: 1rem; transition: all 0.3s ease; color: var(--dark);
-        }
-        .form-group select:focus, .form-group input:focus { border-color: var(--primary); outline: none; }
-
-        #password-area { 
-            display: none;
-            animation: fadeIn 0.4s ease forwards;
-        }
-
-        .btn-login {
-            width: 100%; padding: 14px; background: var(--primary); color: white;
-            border: none; border-radius: 6px; font-size: 1rem; font-weight: bold;
-            cursor: pointer; transition: background 0.2s; margin-top: 10px;
-        }
-        .btn-login:hover { background: var(--primary-hover); }
-
-        footer {
-            background: rgba(26, 32, 44, 0.9);
-            color: #a0aec0;
-            text-align: center;
-            padding: 15px;
-            font-size: 0.85rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-
-    <!-- Banner Informativo de Contagem Baseado no dia 12/05/2026 -->
-    <div class="alert-banner" id="banner-contagem-index">
-        🗓️ Carregando cronograma de inventário...
+<body class="login-bg">
+    
+    <div class="alert-banner blinking-alert" id="banner-contagem-index" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; border-radius: 8px; text-align: center;">
+        🗓️ Mapeando ciclo operacional semanal...
     </div>
 
     <div class="login-container">
-        <div class="login-header">
-            <h1>WMS Control Panel</h1>
-            <p>Selecione seu perfil operacional para acessar</p>
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h1 style="font-size: 1.8rem; color: var(--dark);">WMS Control Panel</h1>
+            <p style="color: var(--gray-text); font-size: 0.9rem;">Selecione seu perfil operacional</p>
         </div>
         <form id="form-auth">
             <div class="form-group">
@@ -112,73 +28,15 @@
                 </select>
             </div>
 
-            <div class="form-group" id="password-area">
+            <div class="form-group" id="password-area" style="display: none;">
                 <label for="input-senha">Senha Autenticadora</label>
                 <input type="password" id="input-senha" placeholder="Digite a chave master">
             </div>
 
-            <button type="submit" class="btn-login">Entrar no Terminal</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar no Terminal</button>
         </form>
     </div>
 
-    <footer>
-        <p>&copy; 2026 Alan Freitas. Todos os direitos reservados. | Infraestrutura de Suprimentos Otimizada</p>
-    </footer>
-
-    <script>
-        function calcularDiasRestantes(idElemento) {
-            const el = document.getElementById(idElemento);
-            
-            // Base fixada estritamente em 12/05/2026 conforme solicitado
-            const ultimaContagem = new Date(2026, 4, 12); 
-            
-            // Intervalo padrão de conformidade cíclica (7 dias)
-            const proximaContagem = new Date(ultimaContagem);
-            proximaContagem.setDate(ultimaContagem.getDate() + 7); 
-            
-            const hoje = new Date();
-            hoje.setHours(0,0,0,0);
-            proximaContagem.setHours(0,0,0,0);
-            
-            const diffTime = proximaContagem - hoje;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (diffDays <= 0) {
-                el.innerHTML = `🚨 ATENÇÃO: Contagem Física Geral pendente! Deveria ter sido realizada em ${proximaContagem.toLocaleDateString('pt-BR')}.`;
-                el.style.background = "rgba(229, 62, 62, 0.9)";
-                el.style.borderColor = "#e53e3e";
-            } else {
-                el.innerHTML = `🗓️ Próxima Contagem Física: ${proximaContagem.toLocaleDateString('pt-BR')} (Restam <strong>${diffDays} dias</strong>)`;
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            calcularDiasRestantes('banner-contagem-index');
-            const select = document.getElementById('perfil-select');
-            const pwdArea = document.getElementById('password-area');
-            const senhaInput = document.getElementById('input-senha');
-
-            select.addEventListener('change', () => {
-                if(select.value === 'administrador') {
-                    pwdArea.style.display = 'block';
-                    senhaInput.setAttribute('required', 'required');
-                } else {
-                    pwdArea.style.display = 'none';
-                    senhaInput.removeAttribute('required');
-                    senhaInput.value = '';
-                }
-            });
-
-            document.getElementById('form-auth').addEventListener('submit', (e) => {
-                e.preventDefault();
-                if(select.value === 'administrador' && senhaInput.value !== '0448000363') {
-                    alert('❌ Senha de Administrador Incorreta!');
-                    return;
-                }
-                sessionStorage.setItem('perfil_ativo', select.value);
-                window.location.href = 'dashboard.html';
-            });
-        });
-    </script>
+    <script src="javascript/login.js"></script>
 </body>
 </html>

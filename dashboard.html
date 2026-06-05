@@ -3,233 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WMS Control - Dashboard Premium</title>
-    <!-- Bibliotecas externas controladas de forma assíncrona -->
+    <title>WMS Control - Terminal Operacional</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        :root {
-            --primary: #2b6cb0; --primary-hover: #2c5282; --success: #48bb78;
-            --warning: #ecc94b; --danger: #f56565; --dark: #2d3748;
-            --bg-main: #f7fafc; --border: #e2e8f0;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; }
-        body { 
-            background: linear-gradient(rgba(247, 250, 252, 0.92), rgba(247, 250, 252, 0.92)), 
-                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-            background-size: cover;
-            min-height: 100vh; display: flex; flex-direction: column; 
-        }
-        
-        .alert-banner-dashboard {
-            background: var(--primary); color: white; padding: 12px; text-align: center;
-            font-weight: bold; font-size: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .main-header { background: var(--dark); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .user-tag { background: rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; }
-        
-        nav { background: #edf2f7; display: flex; border-bottom: 2px solid var(--border); }
-        .tab-btn { padding: 15px 25px; border: none; background: none; font-weight: 600; cursor: pointer; color: #4a5568; transition: all 0.2s; }
-        .tab-btn.active { background: white; color: var(--primary); border-bottom: 3px solid var(--primary); }
-        
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; padding: 25px; flex: 1; }
-        @media(max-width: 992px) { .grid { grid-template-columns: 1fr; } }
-        
-        .panel { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        .form-panel { display: none; }
-        .form-panel.active { display: block; }
-        
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; color: #4a5568; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 5px; }
-        
-        .btn { padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-primary { background: var(--primary); } .btn-primary:hover { background: var(--primary-hover); }
-        .btn-danger { background: var(--danger); } .btn-danger:hover { background: #e53e3e; }
-        .btn-logout { background: transparent; border: 1px solid #fc8181; color: #fc8181; width: auto; padding: 6px 15px; }
-        .btn-logout:hover { background: #fc8181; color: white; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
-        th, td { padding: 12px; border: 1px solid var(--border); text-align: left; }
-        th { background: #f7fafc; color: #4a5568; font-weight: 600; }
-        .row-ok { background-color: #f0fff4; } .row-divergent { background-color: #fff5f5; }
-
-        /* Proteção Estrita Baseada em Classes CSS Injetadas */
-        .admin-only { display: none !important; }
-        body.is-admin .admin-only { display: block !important; }
-        body.is-admin tr .admin-only { display: table-cell !important; }
-        body.is-admin button.admin-only { display: inline-flex !important; }
-
-        .panel-footer { margin-top: auto; padding-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .panel-footer .btn { width: auto; min-width: 140px; }
-        
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 1000; }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal { background: white; padding: 30px; border-radius: 8px; max-width: 500px; width: 90%; }
-
-        footer { background: var(--dark); color: #a0aec0; text-align: center; padding: 15px; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.1); margin-top: auto; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
     <div class="alert-banner-dashboard" id="banner-contagem-dash">
-        🗓️ Sincronizando calendário do inventário físico...
+        <div class="ticker-wrapper">
+            <span class="feed-item-text" id="feed-pista-1">Sincronizando canais de transmissão do feed...</span>
+            <span class="feed-item-text" id="feed-pista-2">Sincronizando canais de transmissão do feed...</span>
+        </div>
     </div>
 
     <header class="main-header">
-        <h2>📦 Módulo Central de Abastecimento</h2>
+        <h2>📦 Módulo Central WMS</h2>
         <div>
-            <span class="user-tag" id="label-perfil">Carregando...</span>
-            <button class="btn btn-logout" id="btn-sair-terminal">Sair</button>
+            <span class="user-tag" id="label-perfil">Aguarde...</span>
+            <button class="btn btn-logout" id="btn-sair-terminal">Sair do Terminal</button>
         </div>
     </header>
 
     <nav>
-        <button class="tab-btn active" data-fluxo="cadastro">📋 Catálogo de Itens</button>
+        <button class="tab-btn active" data-fluxo="corte">⚖️ Painel de Corte</button>
         <button class="tab-btn" data-fluxo="requisicao">📤 Requisições</button>
         <button class="tab-btn" data-fluxo="descarte">🗑️ Descartes</button>
         <button class="tab-btn" data-fluxo="retorno">📥 Retornos</button>
-        <button class="tab-btn" data-fluxo="corte">⚖️ Conciliação (Corte)</button>
+        <button class="tab-btn" data-fluxo="cadastro">📋 Catálogo de Itens</button>
     </nav>
 
-    <div class="grid">
-        <!-- ÁREA DOS FORMULÁRIOS (ESQUERDA) -->
-        <div class="panel">
-            <div id="panel-cadastro" class="form-panel active">
-                <h3>Novo Cadastro de Insumo</h3><br>
-                <form id="form-cadastro">
-                    <div class="form-group"><label>Código WMS</label><input type="text" id="cad-codigo" required></div>
-                    <div class="form-group"><label>Descrição do Item</label><input type="text" id="cad-item" required></div>
-                    <div class="form-group"><label>Qtd por Caixa</label><input type="number" id="cad-caixa" required></div>
-                    <div class="form-group"><label>Qtd por Palete</label><input type="number" id="cad-palete" required></div>
-                    <div class="form-group"><label>Fornecedor Cadastrado</label><input type="text" id="cad-fornecedor" required></div>
-                    <button type="submit" class="btn btn-primary">Salvar Item no Catálogo</button>
+    <main class="dashboard-container">
+        <section class="left-panel">
+            
+            <div id="panel-corte" class="form-panel active">
+                <h3>⚖️ Validação Física (Corte)</h3>
+                <form id="form-corte">
+                    <div class="form-group">
+                        <label>Insumo Auditado</label>
+                        <select id="corte-insumo" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade Física Encontrada</label>
+                        <input type="number" id="corte-qtd" required min="0" placeholder="Ex: 250">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Registrar Contagem</button>
                 </form>
+                
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <h4>📥 Baixar Relatório Atual</h4>
+                    <p style="font-size: 0.85rem; color: var(--gray-text); margin-bottom: 10px;">Download direto instantâneo da tabela aberta.</p>
+                    <form id="form-exportar">
+                        <div class="form-group" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <label><input type="radio" name="formato-doc" value="PDF" checked> Gerar PDF</label>
+                            <label><input type="radio" name="formato-doc" value="EXCEL"> Gerar Planilha (.xlsx)</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Fazer Download</button>
+                    </form>
+                </div>
             </div>
 
             <div id="panel-requisicao" class="form-panel">
-                <h3>Saída por Requisição</h3><br>
+                <h3>📤 Registrar Requisição (+)</h3>
                 <form id="form-requisicao">
-                    <div class="form-group"><label>Insumo</label><select id="req-insumo" class="select-insumo" required></select></div>
-                    <div class="form-group"><label>Quantidade Requisitada</label><input type="number" class="input-qtd" required></div>
-                    <button type="submit" class="btn btn-primary">Processar Saída</button>
+                    <div class="form-group"><label>Insumo</label><select id="req-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Solicitada</label><input type="number" class="input-qtd" required min="1" placeholder="Ex: 500"></div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Confirmar Adição</button>
                 </form>
             </div>
 
             <div id="panel-descarte" class="form-panel">
-                <h3>Baixa por Descarte / Avaria</h3><br>
+                <h3>🗑️ Registrar Descarte (-)</h3>
                 <form id="form-descarte">
-                    <div class="form-group"><label>Insumo</label><select id="des-insumo" class="select-insumo" required></select></div>
-                    <div class="form-group"><label>Quantidade Avariada</label><input type="number" class="input-qtd" required></div>
-                    <button type="submit" class="btn btn-primary">Confirmar Descarte</button>
+                    <div class="form-group"><label>Insumo</label><select id="des-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Descartada</label><input type="number" class="input-qtd" required min="1" placeholder="Ex: 35"></div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Confirmar Baixa</button>
                 </form>
             </div>
 
             <div id="panel-retorno" class="form-panel">
-                <h3>Retorno de Sobra de Processo</h3><br>
+                <h3>📥 Registrar Retorno (-)</h3>
                 <form id="form-retorno">
-                    <div class="form-group"><label>Insumo</label><select id="ret-insumo" class="select-insumo" required></select></div>
-                    <div class="form-group"><label>Quantidade Retornada</label><input type="number" class="input-qtd" required></div>
-                    <button type="submit" class="btn btn-primary">Dar Entrada de Sobra</button>
+                    <div class="form-group"><label>Insumo</label><select id="ret-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Retornada</label><input type="number" class="input-qtd" required min="1" placeholder="Ex: 15"></div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Confirmar Devolução</button>
                 </form>
             </div>
 
-            <div id="panel-corte" class="form-panel">
-                <h3>Lançamento de Inventário Físico</h3><br>
-                <form id="form-corte">
-                    <div class="form-group"><label>Item Verificado</label><select id="corte-insumo" required></select></div>
-                    <div class="form-group"><label>Quantidade Física Encontrada</label><input type="number" id="corte-qtd" required></div>
-                    <button type="submit" class="btn btn-primary">Validar Contagem</button>
+            <div id="panel-cadastro" class="form-panel">
+                <h3>📋 Cadastro WMS</h3>
+                <form id="form-cadastro">
+                    <div class="form-group"><label>Código SKU / Código WMS</label><input type="text" id="cad-codigo" required placeholder="Ex: SKU-3021"></div>
+                    <div class="form-group"><label>Item / Descrição</label><input type="text" id="cad-item" required placeholder="Ex: Bobina Plástica Esticável"></div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1;"><label>Qtd por Caixa</label><input type="number" id="cad-caixa" required min="1" placeholder="Ex: 6"></div>
+                        <div class="form-group" style="flex:1;"><label>Caixas / Palete</label><input type="number" id="cad-palete" required min="1" placeholder="Ex: 60"></div>
+                    </div>
+                    <div class="form-group"><label>Fornecedor</label><input type="text" id="cad-fornecedor" required placeholder="Ex: Zaraplast S.A."></div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Salvar Insumo</button>
                 </form>
             </div>
-        </div>
+        </section>
 
-        <!-- VISUALIZAÇÃO DOS REGISTROS (DIREITA) -->
-        <div class="panel">
-            <h3 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h3>
+        <section class="right-panel">
+            <h3 id="titulo-painel-direito" style="margin-bottom: 15px;">⚖️ Conciliação e Divergência</h3>
             
-            <div style="overflow-x: auto; flex:1;">
-                <!-- Catálogo -->
-                <div id="container-tabela-catalogo">
-                    <table id="tabela-catalogo">
-                        <thead>
-                            <tr><th>Data</th><th>Código</th><th>Item</th><th>Cx</th><th>Pl</th><th>Fornecedor</th><th class="admin-only">Ação</th></tr>
-                        </thead>
-                        <tbody id="corpo-catalogo"></tbody>
-                    </table>
-                </div>
-
-                <!-- Histórico -->
-                <div id="container-tabela-geral" style="display:none;">
-                    <table id="tabela-movimentacoes">
-                        <thead><tr><th>Data/Hora</th><th>Item</th><th>Operação</th><th>Qtd</th></tr></thead>
-                        <tbody id="corpo-movimentacoes"></tbody>
-                    </table>
-                </div>
-
-                <!-- Conciliação -->
-                <div id="container-tabela-corte" style="display:none;">
-                    <table id="tabela-corte">
-                        <thead>
-                            <tr><th>Última Validação</th><th>Item</th><th>Saldo Lógico</th><th>Qtd Física</th><th>Divergência</th><th>Status</th></tr>
-                        </thead>
-                        <tbody id="corpo-corte"></tbody>
-                    </table>
-                </div>
+            <div id="container-tabela-corte">
+                <table id="tabela-export-corte">
+                    <thead><tr><th>Auditoria</th><th>Insumo</th><th>Saldo Lógico</th><th>Físico</th><th>Divergência</th><th>Status</th></tr></thead>
+                    <tbody id="corpo-corte"></tbody>
+                </table>
             </div>
 
-            <div class="panel-footer">
-                <button type="button" class="btn btn-primary" id="btn-imprimir">🖨️ Imprimir Dados</button>
-                <button type="button" class="btn btn-primary" id="btn-trigger-email">📧 Exportar...</button>
-                
-                <!-- Botões administrativos com regras rígidas de escopo por aba -->
-                <button type="button" class="btn btn-danger admin-only btn-trigger-modal" id="btn-purga-catalogo" data-target-purge="cadastro">🗑️ Limpar Catálogo</button>
-                <button type="button" class="btn btn-danger admin-only btn-trigger-modal" id="btn-purga-corte" data-target-purge="corte" style="display:none !important;">🔄 Resetar Contagens</button>
+            <div id="container-tabela-geral" style="display: none;">
+                <table id="tabela-export-geral">
+                    <thead><tr><th>Data/Hora</th><th>Insumo</th><th>Operação</th><th>Qtd</th><th>Operador</th></tr></thead>
+                    <tbody id="corpo-movimentacoes"></tbody>
+                </table>
             </div>
-        </div>
-    </div>
 
-    <!-- MODAL DE EXCLUSÃO -->
+            <div id="container-tabela-catalogo" style="display: none;">
+                <table id="tabela-export-catalogo">
+                    <thead><tr><th>Data Cadastro</th><th>Código</th><th>Item</th><th>Qtd/Cx</th><th>Cx/Pallet</th><th>Fornecedor</th><th class="admin-only" data-html2canvas-ignore>Ações</th></tr></thead>
+                    <tbody id="corpo-catalogo"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
     <div class="modal-overlay" id="modal-alerta">
         <div class="modal">
-            <h3>⚠️ Confirmação do Administrador</h3><br>
-            <p id="texto-aviso-modal">Confirmar a exclusão permanente dos dados?</p><br>
-            <div style="display:flex; gap:10px;">
-                <button type="button" class="btn btn-primary" id="btn-modal-cancel">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btn-modal-confirm">Confirmar Exclusão</button>
+            <h3>⚠️ Confirmar Exclusão</h3>
+            <p>O insumo selecionado será apagado permanentemente do catálogo.</p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn" id="btn-modal-cancel" style="background: var(--border); color: var(--dark);">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-modal-confirm">Sim, Excluir</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL EXPORTAR -->
-    <div class="modal-overlay" id="modal-email">
-        <div class="modal">
-            <h3>📧 Despachar Documentação</h3><br>
-            <form id="form-exportar-email">
-                <div class="form-group">
-                    <label>E-mail Corporativo</label>
-                    <input type="email" id="email-destino" required placeholder="exemplo@empresa.com">
-                    <div style="display: flex; justify-content: space-between; margin-top:5px; font-size:0.8rem;">
-                        <span id="email-feedback-text">Aguardando endereço...</span><span id="email-status-icon">⚪</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Formato de Exportação</label>
-                    <label><input type="radio" name="formato-doc" value="PDF" checked> PDF Assinado</label>
-                    <label><input type="radio" name="formato-doc" value="EXCEL"> Excel Consolidado (XLSX)</label>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button type="button" class="btn btn-danger" id="btn-email-cancel">Desistir</button>
-                    <button type="submit" class="btn btn-primary" id="btn-email-submit" disabled>Disparar Transmissão</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <footer>
-        <p>&copy; 2026 Alan Freitas. Todos os direitos reservados. | Infraestrutura de Suprimentos Otimizada</p>
-    </footer>
+    <footer><p>&copy; 2026 WMS Smart Control | Sistema de Abastecimento</p></footer>
 
     <script src="javascript/database.js"></script>
     <script src="javascript/script.js"></script>

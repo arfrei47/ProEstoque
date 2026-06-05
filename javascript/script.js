@@ -1,5 +1,5 @@
 /**
- * script.js - Controladora de Interface, Compilação de Arquivos e Gatilhos de Hardware
+ * script.js - Controladora de Interface, Compilação de Arquivos e Disparo de E-mail
  */
 document.addEventListener('DOMContentLoaded', () => {
     let fluxoAtivo = 'cadastro';
@@ -326,6 +326,19 @@ document.addEventListener('DOMContentLoaded', () => {
         html2pdf().set(opcoes).from(tabela).save();
     }
 
+    // 🛠️ NOVO MOTOR DE EXPORTAÇÃO COMPLETA: GERA DADOS E DISPARA PARA O CLIENTE DE E-MAIL DO SO
+    function extrairConteudoTabelaParaTexto(tabela) {
+        let texto = "";
+        const linhas = tabela.querySelectorAll("tr");
+        
+        linhas.forEach((linha) => {
+            const celulas = linha.querySelectorAll("th, td");
+            const dadosLinha = Array.from(celulas).map(c => c.textContent.trim());
+            texto += dadosLinha.join(" | ") + "\n";
+        });
+        return texto;
+    }
+
     // Submissão Integrada do Formulário de Exportação
     formExportarEmail.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -340,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabelaAlvo = obterTabelaAtiva();
         const hashArquivo = `Relatorio_${fluxoAtivo.toUpperCase()}_${Date.now()}`;
 
-        // Dispara as compilações em tempo de execução de arquivos físicos
+        // 1. Executa a compilação local física para auditoria do usuário
         if (formato === 'EXCEL' || formato === 'AMBOS') {
             processarPlanilhaExcel(tabelaAlvo, hashArquivo);
         }
@@ -348,7 +361,25 @@ document.addEventListener('DOMContentLoaded', () => {
             processarDocumentoPDF(tabelaAlvo, hashArquivo);
         }
 
-        alert(`🚀 Processamento e Compilação de Mídia Concluídos!\n\nOs dados da aba [${fluxoAtivo.toUpperCase()}] foram processados no formato [${formato}].\nO pacote de dados foi transmitido com sucesso para o gateway de destino:\n📧 ${eAddress}`);
+        // 2. Transmissão nativa dos dados estruturados via protocolo Mailto (Disparo Real do Front)
+        const relatorioTexto = extrairConteudoTabelaParaTexto(tabelaAlvo);
+        const assuntoEmail = encodeURIComponent(`📊 Relatório de Inventário - Módulo: ${fluxoAtivo.toUpperCase()}`);
+        
+        const corpoEmail = encodeURIComponent(
+            `Prezado(a),\n\n` +
+            `Segue em anexo o relatório gerado pelo Sistema de Suprimentos.\n` +
+            `Os arquivos físicos nos formatos selecionados ([${formato}]) foram baixados no seu dispositivo.\n\n` +
+            `=== RESUMO DOS DADOS DO RELATÓRIO ===\n` +
+            `${relatorioTexto}\n` +
+            `=====================================\n\n` +
+            `Gerado em: ${formatarData()}\n` +
+            `ID de Validação do Relatório: ${hashArquivo}\n`
+        );
+
+        // Dispara a intent do sistema operacional para enviar o e-mail preenchido
+        window.location.href = `mailto:${eAddress}?subject=${assuntoEmail}&body=${corpoEmail}`;
+
+        alert(`🚀 Processamento Concluído!\n\n1. O download do arquivo foi iniciado.\n2. O seu aplicativo de e-mail padrão foi aberto com os dados preenchidos para enviar para: ${eAddress}`);
         
         modalEmail.classList.remove('active');
         formExportarEmail.reset();
@@ -375,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alternarAbas('cadastro', tabButtons[0]);
     });
 
-    // ✨ GATILHO CORRIGIDO DE IMPRESSÃO: Aciona o Spooler de Hardware do Navegador
+    // Gatilho de Impressão Física
     btnImprimir.addEventListener('click', () => {
         window.print();
     });

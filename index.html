@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistema Inteligente de Gestão de Almoxarifado com Cadastro de Itens, Movimentações e Inventário Avançado.">
+    <meta name="description" content="Sistema de Suprimentos com Validação de E-mail, Exportação de Relatórios e Impressão de Inventário.">
     <meta name="theme-color" content="#2b6cb0">
-    <title>Controle de Suprimentos Inteligente | Dashboard</title>
+    <title>Controle de Suprimentos Inteligente | Enterprise</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,13 +15,13 @@
 <body>
 
 <div class="container">
-    <header class="main-header">
+    <header class="main-header no-print">
         <h1>📦 Sistema de Suprimentos & Inventário</h1>
-        <p>Gerenciamento dinâmico de fluxos, catálogo de produtos e conciliação de saldos</p>
+        <p>Catálogo unificado, conciliação de saldos e inteligência de exportação</p>
     </header>
 
-    <!-- MENU DE SELEÇÃO DE FLUXOS (ABAS) -->
-    <nav class="menu-fluxos" aria-label="Menu de Operações">
+    <!-- MENU DE ABAS -->
+    <nav class="menu-fluxos no-print" aria-label="Menu de Operações">
         <button class="tab-btn active" data-fluxo="cadastro">🗂️ 0. Cadastro de Itens</button>
         <button class="tab-btn" data-fluxo="requisicao">📋 1. Requisição</button>
         <button class="tab-btn" data-fluxo="descarte">🗑️ 2. Registro de Descarte</button>
@@ -31,9 +31,9 @@
     
     <main class="grid">
         <!-- SEÇÃO ESQUERDA: FORMULÁRIOS -->
-        <section class="card form-section">
+        <section class="card form-section no-print">
             
-            <!-- FORMULÁRIO 0: CADASTRO DE ITENS -->
+            <!-- FORMULÁRIO 0: CADASTRO -->
             <div id="panel-cadastro" class="form-panel active">
                 <h2>Cadastrar Novo Item no Catálogo</h2>
                 <form id="form-cadastro" novalidate>
@@ -75,7 +75,7 @@
                         <label for="req-qtd">Quantidade Solicitada ao Armazém</label>
                         <input type="number" id="req-qtd" class="input-qtd" min="1" required>
                     </div>
-                    <button type="submit" class="btn-submit btn-requisicao">Confirmar Requisição</button>
+                    <button type="submit" class="btn-submit btn-primary">Confirmar Requisição</button>
                 </form>
             </div>
 
@@ -135,11 +135,11 @@
 
         </section>
 
-        <!-- SEÇÃO DIREITA: RELATÓRIOS DINÂMICOS -->
+        <!-- SEÇÃO DIREITA: TABELAS E IMPRESSÃO -->
         <section class="card display-section">
             <h2 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h2>
             
-            <!-- Tabela 0: Catálogo de Itens (Aparece apenas na aba Cadastro) -->
+            <!-- Tabela 0: Catálogo -->
             <div class="table-container" id="container-tabela-catalogo">
                 <table id="tabela-catalogo">
                     <thead>
@@ -156,7 +156,7 @@
                 </table>
             </div>
 
-            <!-- Tabela 1: Histórico de Movimentações Gerais -->
+            <!-- Tabela 1: Movimentações -->
             <div class="table-container" id="container-tabela-geral" style="display: none;">
                 <table id="tabela-movimentacoes">
                     <thead>
@@ -188,18 +188,59 @@
                 </table>
             </div>
 
-            <footer class="panel-footer">
-                <button class="clear-btn" id="btn-trigger-modal">Limpar Todo Histórico</button>
+            <footer class="panel-footer no-print">
+                <button class="print-btn" id="btn-imprimir">🖨️ Imprimir Arquivo</button>
+                <button class="email-btn" id="btn-trigger-email">📧 Enviar por E-mail</button>
+                <button class="clear-btn" id="btn-trigger-modal">🗑️ Limpar Todo Histórico</button>
             </footer>
         </section>
     </main>
 </div>
 
-<!-- MODAL VISUAL CUSTOMIZADO DE CONFIRMAÇÃO -->
-<div class="modal-overlay" id="modal-alerta" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+<!-- MODAL 1: EXPORTAÇÃO VIA E-MAIL -->
+<div class="modal-overlay" id="modal-email" role="dialog" aria-hidden="true">
     <div class="modal-box">
-        <h3 id="modal-title">⚠️ Alerta de Exclusão</h3>
-        <p>Você tem certeza absoluta que deseja apagar todo o histórico de dados, itens cadastrados e contagens? Esta ação não poderá ser desfeita.</p>
+        <h3>📧 Exportar Histórico Atual</h3>
+        <p>Insira um endereço de e-mail válido para liberar a exportação dos dados da aba ativa.</p>
+        
+        <form id="form-exportar-email" novalidate>
+            <div class="form-group style-email-container">
+                <label for="email-destino">E-mail do Destinatário</label>
+                <div class="input-icon-wrapper">
+                    <input type="email" id="email-destino" placeholder="exemplo@empresa.com" required autocomplete="off">
+                    <span id="email-status-icon" class="status-icon" title="Aguardando digitação">⚪</span>
+                </div>
+                <small id="email-feedback-text">Insira um e-mail para validação na rede.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Selecione o Formato do Arquivo</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="formato-doc" value="EXCEL" checked> 📊 Excel (.xlsx)
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="formato-doc" value="PDF"> 📄 PDF (.pdf)
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="formato-doc" value="AMBOS"> 🗂️ Ambos (Excel e PDF)
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-modal-cancel" id="btn-email-cancel">Fechar</button>
+                <button type="submit" class="btn-modal-confirm btn-primary" id="btn-email-submit" disabled>Confirmar Envio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL 2: CONFIRMAÇÃO DE EXCLUSÃO -->
+<div class="modal-overlay" id="modal-alerta" role="dialog" aria-hidden="true">
+    <div class="modal-box">
+        <h3>⚠️ Alerta de Exclusão</h3>
+        <p>Confirma a limpeza de todo o ecossistema de dados? Esta operação é irreversível.</p>
         <div class="modal-buttons">
             <button class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
             <button class="btn-modal-confirm" id="btn-modal-confirm">Sim, Apagar Tudo</button>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WMS Control - Dashboard</title>
+    <!-- Dependências Externas (Planilhas e PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #2b6cb0; --primary-hover: #2c5282; --success: #48bb78;
+            --warning: #ecc94b; --danger: #f56565; --dark: #2d3748;
+            --bg-main: #f7fafc; --border: #e2e8f0;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; }
+        body { 
+            background: linear-gradient(rgba(247, 250, 252, 0.9), rgba(247, 250, 252, 0.9)), 
+                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh; display: flex; flex-direction: column; 
+        }
+        
+        /* Banner de Auditoria */
+        .alert-banner-dashboard {
+            background: #2b6cb0; color: white; padding: 12px; text-align: center;
+            font-weight: bold; font-size: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-header { background: var(--dark); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .user-tag { background: rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; }
+        
+        nav { background: #edf2f7; display: flex; border-bottom: 2px solid var(--border); }
+        .tab-btn { padding: 15px 25px; border: none; background: none; font-weight: 600; cursor: pointer; color: #4a5568; }
+        .tab-btn.active { background: white; color: var(--primary); border-bottom: 3px solid var(--primary); }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; padding: 25px; flex: 1; }
+        @media(max-width: 992px) { .grid { grid-template-columns: 1fr; } }
+        
+        .panel { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .form-panel { display: none; }
+        .form-panel.active { display: block; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; color: #4a5568; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 5px; }
+        
+        .btn { padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; color: white; }
+        .btn-primary { background: var(--primary); } .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { background: var(--danger); }
+        .btn-logout { background: transparent; border: 1px solid #fc8181; color: #fc8181; width: auto; padding: 6px 15px; }
+        .btn-logout:hover { background: #fc8181; color: white; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+        th, td { padding: 12px; border: 1px solid var(--border); text-align: left; }
+        th { background: #f7fafc; color: #4a5568; }
+        .row-ok { background-color: #f0fff4; } .row-divergent { background-color: #fff5f5; }
+
+        /* Esconder controles de administração nativamente por CSS se a classe não for injetada */
+        .admin-only { display: none !important; }
+        body.is-admin .admin-only { display: block !important; }
+        body.is-admin tr .admin-only { display: table-cell !important; }
+        body.is-admin button.admin-only { display: inline-block !important; }
+
+        .panel-footer { margin-top: auto; padding-top: 20px; display: flex; gap: 10px; }
+        
+        /* Modais */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 1000; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background: white; padding: 30px; border-radius: 8px; max-width: 500px; width: 90%; }
+
+        footer { background: var(--dark); color: #a0aec0; text-align: center; padding: 15px; font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.1); margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- Widget Chamativo Dashboard -->
+    <div class="alert-banner-dashboard" id="banner-contagem-dash">
+        🗓️ Sincronizando calendário do inventário físico...
+    </div>
+
+    <header class="main-header">
+        <h2>📦 Módulo Central de Abastecimento</h2>
+        <div>
+            <span class="user-tag" id="label-perfil">Carregando...</span>
+            <button class="btn btn-logout" id="btn-sair-terminal">Sair</button>
+        </div>
+    </header>
+
+    <nav>
+        <button class="tab-btn active" data-fluxo="cadastro">📋 Catálogo de Itens</button>
+        <button class="tab-btn" data-fluxo="requisicao">📤 Requisições</button>
+        <button class="tab-btn" data-fluxo="descarte">🗑️ Descartes</button>
+        <button class="tab-btn" data-fluxo="retorno">📥 Retornos</button>
+        <button class="tab-btn" data-fluxo="corte">⚖️ Conciliação (Corte)</button>
+    </nav>
+
+    <div class="grid">
+        <!-- LADO ESQUERDO: Lançadores de Formulários -->
+        <div class="panel">
+            <!-- ABA 1: CADASTRO -->
+            <div id="panel-cadastro" class="form-panel active">
+                <h3>Novo Cadastro de Insumo</h3><br>
+                <form id="form-cadastro">
+                    <div class="form-group"><label>Código WMS</label><input type="text" id="cad-codigo" required></div>
+                    <div class="form-group"><label>Descrição do Item</label><input type="text" id="cad-item" required></div>
+                    <div class="form-group"><label>Qtd por Caixa</label><input type="number" id="cad-caixa" required></div>
+                    <div class="form-group"><label>Qtd por Palete</label><input type="number" id="cad-palete" required></div>
+                    <div class="form-group"><label>Fornecedor Cadastrado</label><input type="text" id="cad-fornecedor" required></div>
+                    <button type="submit" class="btn btn-primary">Salvar Item no Catálogo</button>
+                </form>
+            </div>
+
+            <!-- ABA 2: REQUISIÇÃO -->
+            <div id="panel-requisicao" class="form-panel">
+                <h3>Saída por Requisição</h3><br>
+                <form id="form-requisicao">
+                    <div class="form-group"><label>Insumo</label><select id="req-insumo" class="select-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Requisitada</label><input type="number" class="input-qtd" required></div>
+                    <button type="submit" class="btn btn-primary">Processar Saída</button>
+                </form>
+            </div>
+
+            <!-- ABA 3: DESCARTE -->
+            <div id="panel-descarte" class="form-panel">
+                <h3>Baixa por Descarte / Avaria</h3><br>
+                <form id="form-descarte">
+                    <div class="form-group"><label>Insumo</label><select id="des-insumo" class="select-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Avariada</label><input type="number" class="input-qtd" required></div>
+                    <button type="submit" class="btn btn-primary">Confirmar Descarte</button>
+                </form>
+            </div>
+
+            <!-- ABA 4: RETORNO -->
+            <div id="panel-retorno" class="form-panel">
+                <h3>Retorno de Sobra de Processo</h3><br>
+                <form id="form-retorno">
+                    <div class="form-group"><label>Insumo</label><select id="ret-insumo" class="select-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Retornada</label><input type="number" class="input-qtd" required></div>
+                    <button type="submit" class="btn btn-primary">Dar Entrada de Sobra</button>
+                </form>
+            </div>
+
+            <!-- ABA 5: CORTE (CONCILIAÇÃO) -->
+            <div id="panel-corte" class="form-panel">
+                <h3>Lançamento de Inventário Físico</h3><br>
+                <form id="form-corte">
+                    <div class="form-group"><label>Item Verificado</label><select id="corte-insumo" required></select></div>
+                    <div class="form-group"><label>Quantidade Física Encontrada</label><input type="number" id="corte-qtd" required></div>
+                    <button type="submit" class="btn btn-primary">Validar Contagem</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- LADO DIREITO: Data Table Dinâmica -->
+        <div class="panel">
+            <h3 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h3>
+            
+            <div style="overflow-x: auto; flex:1;">
+                <!-- Tabela de Itens -->
+                <div id="container-tabela-catalogo">
+                    <table id="tabela-catalogo">
+                        <thead>
+                            <tr><th>Data</th><th>Código</th><th>Item</th><th>Cx</th><th>Pl</th><th>Fornecedor</th><th class="admin-only">Ação</th></tr>
+                        </thead>
+                        <tbody id="corpo-catalogo"></tbody>
+                    </table>
+                </div>
+
+                <!-- Tabela de Movimentações -->
+                <div id="container-tabela-geral" style="display:none;">
+                    <table id="tabela-movimentacoes">
+                        <thead><tr><th>Data/Hora</th><th>Item</th><th>Operação</th><th>Qtd</th></tr></thead>
+                        <tbody id="corpo-movimentacoes"></tbody>
+                    </table>
+                </div>
+
+                <!-- Tabela de Ajuste de Inventário -->
+                <div id="container-tabela-corte" style="display:none;">
+                    <table id="tabela-corte">
+                        <thead>
+                            <tr><th>Última Validação</th><th>Item</th><th>Saldo Lógico</th><th>Qtd Física</th><th>Divergência</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="corpo-corte"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Controles Inferiores de Exportação e Limpeza Completa -->
+            <div class="panel-footer">
+                <button type="button" class="btn btn-primary" id="btn-imprimir">🖨️ Imprimir Histórico</button>
+                <button type="button" class="btn btn-primary" id="btn-trigger-email">📧 Exportar...</button>
+                
+                <!-- Área reservada ao Administrador para limpar bases de dados inteiras -->
+                <button type="button" class="btn btn-danger admin-only btn-trigger-modal" data-target-purge="cadastro">🗑️ Limpar Catálogo</button>
+                <button type="button" class="btn btn-danger admin-only btn-trigger-modal" data-target-purge="corte">🔄 Resetar Contagens</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EXCLUSÃO (ADMIN ONLY) -->
+    <div class="modal-overlay" id="modal-alerta">
+        <div class="modal">
+            <h3>⚠️ Confirmação de Segurança</h3><br>
+            <p id="texto-aviso-modal">Tem certeza que deseja executar essa operação de limpeza?</p><br>
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn btn-primary" id="btn-modal-cancel">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-modal-confirm">Confirmar Exclusão</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EXPORTAR EMAIL -->
+    <div class="modal-overlay" id="modal-email">
+        <div class="modal">
+            <h3>📧 Despachar Documentação</h3><br>
+            <form id="form-exportar-email">
+                <div class="form-group">
+                    <label>E-mail Corporativo</label>
+                    <input type="email" id="email-destino" required placeholder="exemplo@empresa.com">
+                    <div style="display: flex; justify-content: space-between; margin-top:5px; font-size:0.8rem;">
+                        <span id="email-feedback-text">Aguardando endereço...</span><span id="email-status-icon">⚪</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Formato de Exportação</label>
+                    <label><input type="radio" name="formato-doc" value="PDF" checked> PDF Assinado</label>
+                    <label><input type="radio" name="formato-doc" value="EXCEL"> Excel Consolidado (XLSX)</label>
+                    <label><input type="radio" name="formato-doc" value="AMBOS"> Baixar Ambos os Formatos</label>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="btn btn-danger" id="btn-email-cancel">Desistir</button>
+                    <button type="submit" class="btn btn-primary" id="btn-email-submit" disabled>Disparar Transmissão</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Alan Freitas. Todos os direitos reservados. | Infraestrutura de Suprimentos Otimizada</p>
+    </footer>
+
+    <!-- Vinculação da Inteligência do Sistema -->
+    <script src="javascript/database.js"></script>
+    <script src="javascript/script.js"></script>
+</body>
+</html>

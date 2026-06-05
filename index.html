@@ -3,89 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Acesso | Sistema de Suprimentos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-</head>
-<body class="login-body">
-
-<div class="login-card">
-    <header class="login-header">
-        <h2>Industrial Supply v6</h2>
-        <p>Selecione seu perfil operacional para ingressar no terminal</p>
-    </header>
-
-    <form id="form-autenticacao" novalidate>
-        <div class="form-group">
-            <label for="seletor-perfil">Perfil do Usuário</label>
-            <select id="seletor-perfil" required>
-                <option value="apontador" selected>🎯 Apontador (Padrão)</option>
-                <option value="operador">🔧 Operador Logístico</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-submit btn-primary">Acessar Terminal de Controle</button>
-    </form>
-
-    <div class="login-divider"></div>
-
-    <div class="backup-section">
-        <p>Necessita operar em modo desconectado (Offline)?</p>
-        <button type="button" id="btn-baixar-codigo" class="btn-clear-individual" style="border-style: solid; background: var(--gray-light); margin-top: 5px;">
-            💾 Baixar Sistema Completo (.ZIP)
-        </button>
-    </div>
-</div>
-
-<script>
-    document.getElementById('form-autenticacao').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const perfil = document.getElementById('seletor-perfil').value;
-        sessionStorage.setItem('perfil_ativo', perfil);
-        window.location.href = 'painel.html';
-    });
-
-    document.getElementById('btn-baixar-codigo').addEventListener('click', async () => {
-        const btn = document.getElementById('btn-baixar-codigo');
-        btn.textContent = "⌛ Compilando pacotes...";
-        btn.disabled = true;
-
-        try {
-            const zip = new JSZip();
-            const caminhos = [
-                'index.html', 'painel.html', 'css/style.css', 
-                'javascript/LocalStorage/db.js', 'javascript/script.js'
-            ];
-
-            for (const path of caminhos) {
-                try {
-                    const response = await fetch(path);
-                    if (response.ok) {
-                        const texto = await response.text();
-                        zip.file(path, texto);
-                    }
-                } catch (err) { 
-                    console.error(`Falha ao empacotar arquivo local: ${path}`, err); 
-                }
-            }
-
-            const content = await zip.generateAsync({ type: "blob" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(content);
-            link.download = "Sistema_Suprimentos_Enterprise.zip";
-            link.click();
-            
-            btn.textContent = "✅ Download Concluído!";
-        } catch (error) {
-            alert("Erro ao gerar pacote local de instalação.");
-            btn.textContent = "💾 Baixar Sistema Completo (.ZIP)";
-        } finally {
-            setTimeout(() => { btn.disabled = false; btn.textContent = "💾 Baixar Sistema Completo (.ZIP)"; }, 2500);
+    <title>WMS Control - Autenticação</title>
+    <style>
+        :root {
+            --primary: #2b6cb0;
+            --primary-hover: #2c5282;
+            --dark: #1a202c;
+            --light: #f7fafc;
+            --border: #e2e8f0;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
-    });
-</script>
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* Imagem profissional com temática de logística, estoque e suprimentos */
+            background: linear-gradient(rgba(26, 32, 44, 0.85), rgba(26, 32, 44, 0.85)), 
+                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .alert-banner {
+            background: rgba(237, 137, 54, 0.2);
+            border: 2px solid #ed8936;
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 20px auto 0 auto;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 450px;
+            margin: auto;
+        }
+
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-header h1 { color: var(--dark); font-size: 1.8rem; margin-bottom: 5px; }
+        .login-header p { color: #718096; font-size: 0.95rem; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--dark); font-weight: 600; font-size: 0.9rem; }
+        .form-group select, .form-group input {
+            width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 6px;
+            font-size: 1rem; transition: all 0.3s ease; color: var(--dark);
+        }
+        .form-group select:focus, .form-group input:focus { border-color: var(--primary); outline: none; }
+
+        #password-area { 
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .btn-login {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 6px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: background 0.2s; margin-top: 10px;
+        }
+        .btn-login:hover { background: var(--primary-hover); }
+
+        footer {
+            background: rgba(26, 32, 44, 0.9);
+            color: #a0aec0;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- Widget Chamativo de Contagem Física -->
+    <div class="alert-banner" id="banner-contagem-index">
+        🗓️ Carregando cronograma de inventário...
+    </div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <h1>WMS Control Panel</h1>
+            <p>Selecione seu perfil operacional para acessar</p>
+        </div>
+        <form id="form-auth">
+            <div class="form-group">
+                <label for="perfil-select">Perfil de Acesso</label>
+                <select id="perfil-select" required>
+                    <option value="" disabled selected>-- Escolha o Perfil --</option>
+                    <option value="administrador">🔑 Administrador</option>
+                    <option value="apontador">🎯 Apontador de Produção</option>
+                    <option value="operacao">🔧 Operação</option>
+                </select>
+            </div>
+
+            <!-- Campo de Senha condicional via JS -->
+            <div class="form-group" id="password-area">
+                <label for="input-senha">Senha Autenticadora</label>
+                <input type="password" id="input-senha" placeholder="Digite a chave master">
+            </div>
+
+            <button type="submit" class="btn-login">Entrar no Terminal</button>
+        </form>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Alan Freitas. Todos os direitos reservados. | Infraestrutura de Suprimentos Otimizada</p>
+    </footer>
+
+    <script>
+        // DB utilitário em linha para a tela de login rodar o banner de dias restantes
+        const getUltimaData = () => {
+            try {
+                const c = JSON.parse(localStorage.getItem('wms_contagens') || '{}');
+                const datas = Object.values(c).map(v => new Date(v.dataValidacao.split(' ')[0].split('/').reverse().join('-')));
+                return datas.length ? new Date(Math.max(...datas)) : null;
+            } catch { return null; }
+        };
+
+        function atualizarBanner(idElemento) {
+            const el = document.getElementById(idElemento);
+            const ultimaValidacao = getUltimaData();
+            const baseData = ultimaValidacao ? ultimaValidacao : new Date();
+            
+            const proximaContagem = new Date(baseData);
+            proximaContagem.setDate(baseData.getDate() + 7); // Ciclo de inventário a cada 7 dias
+            
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            proximaContagem.setHours(0,0,0,0);
+            
+            const diffTime = proximaContagem - hoje;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays <= 0) {
+                el.innerHTML = `🚨 ATENÇÃO: A Contagem Física Geral deve ser realizada HOJE!`;
+                el.style.background = "rgba(229, 62, 62, 0.9)";
+                el.style.borderColor = "#e53e3e";
+            } else {
+                el.innerHTML = `🗓️ Próxima Contagem Física: ${proximaContagem.toLocaleDateString('pt-BR')} (Restam <strong>${diffDays} dias</strong>)`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            atualizarBanner('banner-contagem-index');
+            const select = document.getElementById('perfil-select');
+            const pwdArea = document.getElementById('password-area');
+            const senhaInput = document.getElementById('input-senha');
+
+            select.addEventListener('change', () => {
+                if(select.value === 'administrador') {
+                    pwdArea.style.display = 'block';
+                    senhaInput.setAttribute('required', 'required');
+                } else {
+                    pwdArea.style.display = 'none';
+                    senhaInput.removeAttribute('required');
+                    senhaInput.value = '';
+                }
+            });
+
+            document.getElementById('form-auth').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const perfil = select.value;
+                if(perfil === 'administrador') {
+                    if(senhaInput.value !== '0448000363') {
+                        alert('❌ Senha de Administrador Incorreta!');
+                        return;
+                    }
+                }
+                sessionStorage.setItem('perfil_ativo', perfil);
+                window.location.href = 'dashboard.html';
+            });
+        });
+    </script>
 </body>
 </html>

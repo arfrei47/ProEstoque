@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle | Sistema de Suprimentos</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <header class="main-header no-print">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: left;">
+                <h1>📦 Terminal de Suprimentos & Inventário</h1>
+                <p>Nível de Acesso: <span id="label-perfil" style="font-weight: bold; color: var(--primary);">Apontador</span></p>
+            </div>
+            <button type="button" id="btn-sair-terminal" class="btn-clear-individual" style="width: auto; padding: 10px 20px; border-style: solid; background: #fff;">🚪 Sair do Sistema</button>
+        </div>
+    </header>
+
+    <nav class="menu-fluxos no-print" aria-label="Menu de Operações">
+        <button class="tab-btn active" data-fluxo="cadastro">🗂️ 0. Cadastro de Itens</button>
+        <button class="tab-btn" data-fluxo="requisicao">📋 1. Requisição</button>
+        <button class="tab-btn" data-fluxo="descarte">🗑️ 2. Registro de Descarte</button>
+        <button class="tab-btn" data-fluxo="retorno">🔄 3. Retorno / Devolução</button>
+        <button class="tab-btn" data-fluxo="corte">⚖️ 4. Ajuste de Corte (Físico)</button>
+    </nav>
+    
+    <main class="grid">
+        <!-- FORMULÁRIOS OPERACIONAIS (ESQUERDA) -->
+        <section class="card form-section no-print">
+            
+            <div id="panel-cadastro" class="form-panel active">
+                <h2>Cadastrar Novo Item no Catálogo</h2>
+                <form id="form-cadastro" novalidate>
+                    <div class="form-group">
+                        <label for="cad-codigo">Código do Item</label>
+                        <input type="text" id="cad-codigo" placeholder="Ex: COD123" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="cad-item">Nome do Item / Insumo</label>
+                        <input type="text" id="cad-item" placeholder="Ex: POTES PLÁSTICOS" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="cad-caixa">Quantidade por Caixa</label>
+                        <input type="number" id="cad-caixa" min="1" placeholder="Ex: 24" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cad-palete">Quantidade por Palete</label>
+                        <input type="number" id="cad-palete" min="1" placeholder="Ex: 1200" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cad-fornecedor">Fornecedor</label>
+                        <input type="text" id="cad-fornecedor" placeholder="Ex: Plast Distribuidora" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn-submit btn-cadastro">Salvar no Catálogo</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="cadastro">🗑️ Limpar Todo Catálogo</button>
+                </form>
+            </div>
+            
+            <div id="panel-requisicao" class="form-panel">
+                <h2>Solicitar Suprimento</h2>
+                <form id="form-requisicao" novalidate>
+                    <div class="form-group">
+                        <label for="req-insumo">Item / Insumo</label>
+                        <select id="req-insumo" class="select-insumo" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="req-qtd">Quantidade Solicitada ao Armazém</label>
+                        <input type="number" id="req-qtd" class="input-qtd" min="1" required>
+                    </div>
+                    <button type="submit" class="btn-submit btn-primary">Confirmar Requisição</button>
+                </form>
+            </div>
+
+            <div id="panel-descarte" class="form-panel">
+                <h2>Registrar Descarte (Perda)</h2>
+                <form id="form-descarte" novalidate>
+                    <div class="form-group">
+                        <label for="desc-insumo">Item / Insumo</label>
+                        <select id="desc-insumo" class="select-insumo" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="desc-qtd">Quantidade Descartada no Processo</label>
+                        <input type="number" id="desc-qtd" class="input-qtd" min="1" required>
+                    </div>
+                    <button type="submit" class="btn-submit btn-danger">Registrar Descarte</button>
+                </form>
+            </div>
+
+            <div id="panel-retorno" class="form-panel">
+                <h2>Retorno ao Estoque (Sobra)</h2>
+                <form id="form-retorno" novalidate>
+                    <div class="form-group">
+                        <label for="ret-insumo">Item / Insumo</label>
+                        <select id="ret-insumo" class="select-insumo" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ret-qtd">Quantidade Devolvida</label>
+                        <input type="number" id="ret-qtd" class="input-qtd" min="1" required>
+                    </div>
+                    <button type="submit" class="btn-submit btn-success">Registrar Devolução</button>
+                </form>
+            </div>
+
+            <div id="panel-corte" class="form-panel">
+                <h2>Lançar Contagem Física (Corte)</h2>
+                <form id="form-corte" novalidate>
+                    <div class="form-group">
+                        <label for="corte-insumo">Item / Insumo Evaluado</label>
+                        <select id="corte-insumo" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="corte-qtd">Quantidade Real Encontrada (Física)</label>
+                        <input type="number" id="corte-qtd" min="0" required>
+                    </div>
+                    <button type="submit" class="btn-submit btn-warning">Cruzar e Validar Dados</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="corte">🗑️ Limpar Dados de Contagem Física</button>
+                </form>
+            </div>
+
+        </section>
+
+        <!-- QUADROS DE EXIBIÇÃO EM TEMPO REAL (DIREITA) -->
+        <section class="card display-section" id="section-render-alvo">
+            <h2 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h2>
+            
+            <div class="table-container" id="container-tabela-catalogo">
+                <table id="tabela-catalogo">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora Cad.</th>
+                            <th>Código</th>
+                            <th>Item</th>
+                            <th>Qtd/Cx</th>
+                            <th>Qtd/Palete</th>
+                            <th>Fornecedor</th>
+                            <th class="no-print">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-catalogo"></tbody>
+                </table>
+            </div>
+
+            <div class="table-container" id="container-tabela-geral" style="display: none;">
+                <p class="no-print" style="margin: 8px 12px; font-size:0.8rem; color:#718096; font-style:italic;">
+                    * Exibindo apenas os 5 registros mais recentes na tela. O relatório completo e e-mail exportarão o banco integral de auditoria.
+                </p>
+                <table id="tabela-movimentacoes">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Item</th>
+                            <th>Operação</th>
+                            <th>Quantidade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-movimentacoes"></tbody>
+                </table>
+            </div>
+
+            <div class="table-container" id="container-tabela-corte" style="display: none;">
+                <table id="tabela-corte">
+                    <thead>
+                        <tr>
+                            <th>Última Validação</th>
+                            <th>Item</th>
+                            <th>Saldo Lógico</th>
+                            <th>Contagem Física</th>
+                            <th>Divergência</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-corte"></tbody>
+                </table>
+            </div>
+
+            <footer class="panel-footer no-print">
+                <button type="button" class="print-btn" id="btn-imprimir">🖨️ Imprimir Arquivo</button>
+                <button type="button" class="email-btn" id="btn-trigger-email">📧 Enviar por E-mail</button>
+            </footer>
+        </section>
+    </main>
+</div>
+
+<!-- MODAL: EMAIL & EXPORTAÇÃO -->
+<div class="modal-overlay" id="modal-email" role="dialog" aria-hidden="true">
+    <div class="modal-box">
+        <h3>📧 Exportar Histórico Ativo</h3>
+        <p>Insira um e-mail válido para liberar a extração local do arquivo.</p>
+        <form id="form-exportar-email" novalidate>
+            <div class="form-group style-email-container">
+                <label for="email-destino">E-mail do Destinatário</label>
+                <div class="input-icon-wrapper">
+                    <input type="email" id="email-destino" placeholder="exemplo@empresa.com" required autocomplete="off">
+                    <span id="email-status-icon" class="status-icon">⚪</span>
+                </div>
+                <small id="email-feedback-text">Aguardando inserção...</small>
+            </div>
+            <div class="form-group">
+                <label>Selecione o Formato do Relatório</label>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="formato-doc" value="EXCEL" checked> Planilha Excel (.xlsx)</label>
+                    <label class="radio-label"><input type="radio" name="formato-doc" value="PDF"> Documento PDF (.pdf)</label>
+                    <label class="radio-label"><input type="radio" name="formato-doc" value="AMBOS"> Ambos os Formatos</label>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-modal-cancel" id="btn-email-cancel">Fechar</button>
+                <button type="submit" class="btn-modal-confirm btn-primary" id="btn-email-submit" disabled>Confirmar Envio</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: CONFIRMAÇÃO DE DESTRUIÇÃO SELETIVA -->
+<div class="modal-overlay" id="modal-alerta" role="dialog" aria-hidden="true">
+    <div class="modal-box">
+        <h3>⚠️ Controle de Exclusão</h3>
+        <p id="texto-aviso-modal">Deseja prosseguir?</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
+            <button type="button" class="btn-modal-confirm" id="btn-modal-confirm" style="background-color: var(--danger); color: white;">Confirmar Ação</button>
+        </div>
+    </div>
+</div>
+
+<script src="javascript/LocalStorage/db.js"></script>
+<script src="javascript/script.js"></script>
+</body>
+</html>

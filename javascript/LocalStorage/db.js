@@ -1,11 +1,11 @@
 /**
- * db.js - Camada de Persistência via LocalStorage Isolada por Contexto
+ * db.js - Camada de Dados e Regras de Negócio do LocalStorage
  */
 const DB = {
     KEYS: {
-        CATALOGO: 'catalogo_itens_v5',
-        MOVIMENTACOES: 'hist_movimentos_v5',
-        CONTAGENS: 'contagens_corte_v5'
+        CATALOGO: 'catalogo_itens_v6',
+        MOVIMENTACOES: 'hist_movimentos_v6',
+        CONTAGENS: 'contagens_corte_v6'
     },
 
     getCatalogo() {
@@ -15,6 +15,13 @@ const DB = {
     saveCatalogoItem(item) {
         const catalogo = this.getCatalogo();
         catalogo.push(item);
+        localStorage.setItem(this.KEYS.CATALOGO, JSON.stringify(catalogo));
+    },
+
+    // Remove um item individual do catálogo filtrando por seu código único
+    deleteCatalogoItem(codigo) {
+        let catalogo = this.getCatalogo();
+        catalogo = catalogo.filter(i => i.codigo !== codigo);
         localStorage.setItem(this.KEYS.CATALOGO, JSON.stringify(catalogo));
     },
 
@@ -38,16 +45,6 @@ const DB = {
         localStorage.setItem(this.KEYS.CONTAGENS, JSON.stringify(dados));
     },
 
-    // Métodos de Purga Cirúrgica e Isolada por Chave
-    clearCatalogo() {
-        localStorage.removeItem(this.KEYS.CATALOGO);
-    },
-
-    clearMovimentacoes() {
-        localStorage.removeItem(this.KEYS.MOVIMENTACOES);
-    },
-
-    clearContagens() {
-        localStorage.removeItem(this.KEYS.CONTAGENS);
-    }
+    clearCatalogo() { localStorage.removeItem(this.KEYS.CATALOGO); },
+    clearContagens() { localStorage.removeItem(this.KEYS.CONTAGENS); }
 };

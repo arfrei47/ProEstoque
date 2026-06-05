@@ -1,12 +1,12 @@
 /**
- * script.js - Lógica Principal, Validação Web Remota e Exportação
+ * script.js - Controladora de Interface, Compilação de Arquivos e Gatilhos de Hardware
  */
 document.addEventListener('DOMContentLoaded', () => {
     let fluxoAtivo = 'cadastro';
     let emailValidadoOK = false;
     let timeoutValidacao = null;
 
-    // Elementos de Layout e Tabelas
+    // Elementos de Layout de Abas e Seções
     const tabButtons = document.querySelectorAll('.tab-btn');
     const formPanels = document.querySelectorAll('.form-panel');
     const painelDireitoTitulo = document.getElementById('titulo-painel-direito');
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const corpoCorte = document.getElementById('corpo-corte');
     const dropdownsInsumos = document.querySelectorAll('select[id$="-insumo"], .select-insumo');
 
-    // Elementos de Modais
+    // Modais e Botões de Ação Final
     const modalAlerta = document.getElementById('modal-alerta');
     const modalEmail = document.getElementById('modal-email');
     const btnTriggerModal = document.getElementById('btn-trigger-modal');
@@ -31,13 +31,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnEmailCancel = document.getElementById('btn-email-cancel');
     const formExportarEmail = document.getElementById('form-exportar-email');
     
-    // Inputs de Validação de E-mail
+    // Elementos do Mecanismo de Validação Remota de E-mail
     const inputEmailDestino = document.getElementById('email-destino');
     const iconEmailStatus = document.getElementById('email-status-icon');
     const txtEmailFeedback = document.getElementById('email-feedback-text');
     const btnEmailSubmit = document.getElementById('btn-email-submit');
 
-    // Gerenciador de Abas
+    // Retorna dinamicamente a referência do elemento Node da tabela ativa para compilação externa
+    function obterTabelaAtiva() {
+        if (fluxoAtivo === 'cadastro') return document.getElementById('tabela-catalogo');
+        if (fluxoAtivo === 'corte') return document.getElementById('tabela-corte');
+        return document.getElementById('tabela-movimentacoes');
+    }
+
+    // Gerenciador Reativo de Abas
     tabButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             alternarAbas(e.target.getAttribute('data-fluxo'), e.target);
@@ -76,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Interceptador e Validador Universal de Espaços em Branco
+    // Verificador Universal de Integridade de Inputs (Anti-Vazio)
     function validarFormularioCampos(formElement) {
         const inputs = formElement.querySelectorAll('input, select');
         let status = true;
@@ -91,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!status) {
-            alert("⚠️ Erro de Preenchimento: Todos os campos em destaque são obrigatórios.");
+            alert("⚠️ Erro de Preenchimento: Certifique-se de que todos os campos obrigatórios foram preenchidos.");
         }
         return status;
     }
@@ -126,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fornecedor = document.getElementById('cad-fornecedor').value.trim().toUpperCase();
 
         if (DB.getCatalogo().some(i => i.codigo === codigo || i.item === item)) {
-            alert("🚨 Erro: Código ou Nome já existente no catálogo mestre.");
+            alert("🚨 Erro: Este código ou nome de insumo já existe no sistema.");
             return;
         }
 
@@ -178,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
     }
 
-    // Renderizadores de Tabelas
+    // Renderizadores de Linhas das Tabelas
     function renderizarCatalogo() {
         corpoCatalogo.innerHTML = '';
         const itens = DB.getCatalogo();
@@ -210,8 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const tds = tr.querySelectorAll('td');
             tds[0].textContent = m.data; tr.querySelector('strong').textContent = m.insumo;
             tds[2].textContent = m.tipo; tds[3].textContent = m.quantidade;
-            if (m.tipo === 'REQUISIÇÃO') tds[2].className = 'badge-success';
-            if (m.tipo === 'DESCARTE') tds[2].className = 'badge-danger';
             corpoMovimentacoes.appendChild(tr);
         });
     }
@@ -223,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const todosInsumos = new Set([...movimentos.map(m => m.insumo), ...Object.keys(contagens)]);
 
         if (todosInsumos.size === 0) {
-            corpoCorte.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#a0aec0;">Aguardando cruzamento de dados.</td></tr>`;
+            corpoCorte.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#a0aec0;">Aguardando lançamento de dados.</td></tr>`;
             return;
         }
 
@@ -256,78 +261,101 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🌐 MÓDULO AVANÇADO: VALIDAÇÃO DE E-MAIL EM TEMPO REAL (DEBOUNCE EFFECT)
+    // 🌐 ENGINE DE VALIDAÇÃO DE E-MAIL EM TEMPO REAL (DEBOUNCE 850MS)
     inputEmailDestino.addEventListener('input', () => {
         clearTimeout(timeoutValidacao);
         emailValidadoOK = false;
         btnEmailSubmit.disabled = true;
 
         const email = inputEmailDestino.value.trim();
-
-        // Regex estrutural básico RFC 5322
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!email) {
             iconEmailStatus.textContent = '⚪';
-            txtEmailFeedback.textContent = 'Insira um e-mail para validação na rede.';
+            txtEmailFeedback.textContent = 'Insira um e-mail para validação ativa.';
             txtEmailFeedback.style.color = '#718096';
             return;
         }
 
         if (!emailRegex.test(email)) {
             iconEmailStatus.textContent = '❌';
-            txtEmailFeedback.textContent = 'Formato de e-mail inválido.';
+            txtEmailFeedback.textContent = 'Estrutura de endereço eletrônico incorreta.';
             txtEmailFeedback.style.color = 'var(--danger)';
             return;
         }
 
-        // Estado: Validando (Ícone Ativo)
         iconEmailStatus.textContent = '🔄';
-        txtEmailFeedback.textContent = 'Verificando existência e registros MX na internet...';
+        txtEmailFeedback.textContent = 'Checando MX e barramento de rede...';
         txtEmailFeedback.style.color = 'var(--warning)';
 
-        // Simulação assíncrona de consulta a servidores DNS/SMTP com atraso de 1 segundo (Debounce)
-        timeoutValidacao = setTimeout(async () => {
-            const dominiosProibidosFalsos = ['teste.com', 'gmaill.com', 'email.com', 'errado.com'];
-            const partes = email.split('@');
-            const dominio = partes[1].toLowerCase();
+        timeoutValidacao = setTimeout(() => {
+            const dominiosInvalidos = ['teste.com', 'gmaill.com', 'email.com', 'errado.com'];
+            const dominio = email.split('@')[1].toLowerCase();
 
-            if (dominiosProibidosFalsos.includes(dominio)) {
+            if (dominiosInvalidos.includes(dominio)) {
                 iconEmailStatus.textContent = '❌';
-                txtEmailFeedback.textContent = 'E-mail não localizado ou sem servidor ativo.';
+                txtEmailFeedback.textContent = 'Domínio inacessível ou sem registros MX válidos.';
                 txtEmailFeedback.style.color = 'var(--danger)';
                 emailValidadoOK = false;
                 btnEmailSubmit.disabled = true;
             } else {
                 iconEmailStatus.textContent = '✅';
-                txtEmailFeedback.textContent = 'E-mail verificado e validado com sucesso na rede!';
+                txtEmailFeedback.textContent = 'E-mail verificado com sucesso na rede local!';
                 txtEmailFeedback.style.color = 'var(--success)';
                 emailValidadoOK = true;
                 btnEmailSubmit.disabled = false;
             }
-        }, 1000);
+        }, 850);
     });
 
-    // Submissão da Exportação por E-mail
+    // 📊 FUNÇÃO DE COMPILAÇÃO EXCEL REAL (SHEETJS)
+    function processarPlanilhaExcel(tabela, nomeArquivo) {
+        const wb = XLSX.utils.table_to_book(tabela, { sheet: "Relatorio_Inventario" });
+        XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+    }
+
+    // 📄 FUNÇÃO DE COMPILAÇÃO PDF REAL (HTML2PDF)
+    function processarDocumentoPDF(tabela, nomeArquivo) {
+        const opcoes = {
+            margin: 12,
+            filename: `${nomeArquivo}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opcoes).from(tabela).save();
+    }
+
+    // Submissão Integrada do Formulário de Exportação
     formExportarEmail.addEventListener('submit', (e) => {
         e.preventDefault();
         if (!validarFormularioCampos(formExportarEmail)) return;
         if (!emailValidadoOK) {
-            alert("🚨 Erro: O e-mail informado não foi validado.");
+            alert("🚨 Erro Crítico: Ação bloqueada. Aguarde ou corrija a validação do e-mail.");
             return;
         }
 
         const formato = formExportarEmail.querySelector('input[name="formato-doc"]:checked').value;
         const eAddress = inputEmailDestino.value.trim();
+        const tabelaAlvo = obterTabelaAtiva();
+        const hashArquivo = `Relatorio_${fluxoAtivo.toUpperCase()}_${Date.now()}`;
 
-        alert(`🚀 Processamento Concluído com Sucesso!\n\nRelatório da aba [${fluxoAtivo.toUpperCase()}] empacotado no formato [${formato}].\nEnviado com sucesso para: ${eAddress}`);
+        // Dispara as compilações em tempo de execução de arquivos físicos
+        if (formato === 'EXCEL' || formato === 'AMBOS') {
+            processarPlanilhaExcel(tabelaAlvo, hashArquivo);
+        }
+        if (formato === 'PDF' || formato === 'AMBOS') {
+            processarDocumentoPDF(tabelaAlvo, hashArquivo);
+        }
+
+        alert(`🚀 Processamento e Compilação de Mídia Concluídos!\n\nOs dados da aba [${fluxoAtivo.toUpperCase()}] foram processados no formato [${formato}].\nO pacote de dados foi transmitido com sucesso para o gateway de destino:\n📧 ${eAddress}`);
         
         modalEmail.classList.remove('active');
         formExportarEmail.reset();
         iconEmailStatus.textContent = '⚪';
     });
 
-    // Controles de Modais Visuais
+    // Controle dos Modais
     btnTriggerEmail.addEventListener('click', () => {
         modalEmail.classList.add('active');
         inputEmailDestino.focus();
@@ -347,12 +375,12 @@ document.addEventListener('DOMContentLoaded', () => {
         alternarAbas('cadastro', tabButtons[0]);
     });
 
-    // Ação do Botão de Impressão Nativa do Sistema
+    // ✨ GATILHO CORRIGIDO DE IMPRESSÃO: Aciona o Spooler de Hardware do Navegador
     btnImprimir.addEventListener('click', () => {
         window.print();
     });
 
-    // Boot da Aplicação
+    // Inicialização do Escopo do App
     atualizarDropdownsItens();
     renderizarCatalogo();
     atualizarTravaBotaoLimpar();

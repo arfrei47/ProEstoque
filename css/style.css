@@ -145,16 +145,14 @@ input:focus, select:focus {
 .btn-warning { background-color: var(--warning); }
 .btn-submit:hover { filter: brightness(0.92); }
 
-/* Input com Ícone de Status Embutido */
+/* Input com Componente de Status Acoplado */
 .input-icon-wrapper {
     position: relative;
     display: flex;
     align-items: center;
 }
 
-.input-icon-wrapper input {
-    padding-right: 40px;
-}
+.input-icon-wrapper input { padding-right: 40px; }
 
 .status-icon {
     position: absolute;
@@ -170,7 +168,7 @@ input:focus, select:focus {
     color: #718096;
 }
 
-/* Radio Alternativos Alinhados */
+/* Seletores de Rádios Customizados */
 .radio-group {
     display: flex;
     flex-direction: column;
@@ -187,12 +185,9 @@ input:focus, select:focus {
     font-size: 0.9rem;
 }
 
-.radio-label input {
-    width: auto;
-    cursor: pointer;
-}
+.radio-label input { width: auto; cursor: pointer; }
 
-/* Container de Tabelas Rolável */
+/* Estrutura das Tabelas e Rolagem Otimizada */
 .table-container {
     overflow-x: auto;
     border: 1px solid var(--border);
@@ -208,7 +203,7 @@ th { background-color: #edf2f7; color: #4a5568; font-weight: 600; position: stic
 .row-ok { background-color: var(--success-light); color: var(--success); }
 .row-divergent { background-color: var(--danger-light); color: var(--danger); }
 
-/* Rodapé de Ações */
+/* Rodapé Operacional */
 .panel-footer {
     margin-top: 20px;
     display: flex;
@@ -231,13 +226,12 @@ th { background-color: #edf2f7; color: #4a5568; font-weight: 600; position: stic
     background-color: #cbd5e0 !important;
     color: #a0aec0 !important;
     cursor: not-allowed;
-    transform: none;
 }
 
-/* Estrutura de Modais */
+/* Modais Estruturais */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(26, 32, 44, 0.5); backdrop-filter: blur(3px);
+    background: rgba(26, 32, 44, 0.45); backdrop-filter: blur(4px);
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 1000;
 }
@@ -251,15 +245,16 @@ th { background-color: #edf2f7; color: #4a5568; font-weight: 600; position: stic
 .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;}
 .modal-buttons button { padding: 9px 15px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
 .btn-modal-cancel { background-color: #e2e8f0; color: #4a5568; }
-.btn-modal-confirm:disabled { background-color: #e2e8f0; color: #a0aec0; cursor: not-allowed;}
 
-/* 🖨️ Diretiva de Impressão de Alta Performance */
+/* 🖨️ DIRETIVA DE IMPRESSÃO - INTERCEPTA O SPOOLER DO NAVEGADOR */
 @media print {
-    body { background: white; padding: 0; color: black; }
-    .no-print { display: none !important; }
-    .grid { grid-template-columns: 1fr; }
-    .card { box-shadow: none; border: none; padding: 0; }
-    .table-container { max-height: none; overflow: visible; border: none; }
-    th { background-color: #f7fafc !important; color: black !important; position: static; }
-    td, th { border-bottom: 1px solid #cbd5e0; }
+    body { background: white !important; padding: 0 !important; color: black !important; }
+    .no-print, .modal-overlay, .panel-footer, header, nav { display: none !important; }
+    .grid { display: block !important; width: 100% !important; }
+    .card { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; }
+    .table-container { max-height: none !important; overflow: visible !important; border: none !important; width: 100% !important; }
+    table { width: 100% !important; border: 1px solid #cbd5e0 !important; page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    th { background-color: #f7fafc !important; color: black !important; position: static !important; font-weight: bold !important; border-bottom: 2px solid #000 !important; }
+    td, th { border-bottom: 1px solid #cbd5e0 !important; padding: 10px !important; white-space: normal !important; text-align: left !important; }
 }

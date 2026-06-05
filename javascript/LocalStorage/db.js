@@ -1,5 +1,5 @@
 /**
- * db.js - Camada de Persistência Abstrata LocalStorage
+ * db.js - Abstração da Camada de Persistência via LocalStorage
  */
 const DB = {
     KEYS: {

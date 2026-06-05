@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistema de Suprimentos com Validação de E-mail, Exportação de Relatórios e Impressão de Inventário.">
+    <meta name="description" content="Sistema Avançado de Suprimentos com Validação de E-mail, Exportação de Relatórios e Impressão de Inventário.">
     <meta name="theme-color" content="#2b6cb0">
     <title>Controle de Suprimentos Inteligente | Enterprise</title>
     
+    <!-- Pré-conexão de Fontes para Otimização de Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- Motores Externos e Seguros (CDNs) para Processamento Real de Arquivos no Cliente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
 <div class="container">
     <header class="main-header no-print">
         <h1>📦 Sistema de Suprimentos & Inventário</h1>
-        <p>Catálogo unificado, conciliação de saldos e inteligência de exportação</p>
+        <p>Catálogo unificado, conciliação de saldos e inteligência de exportação nativa</p>
     </header>
 
-    <!-- MENU DE ABAS -->
+    <!-- MENU DE ABAS (NAVEGAÇÃO FLUIDA) -->
     <nav class="menu-fluxos no-print" aria-label="Menu de Operações">
         <button class="tab-btn active" data-fluxo="cadastro">🗂️ 0. Cadastro de Itens</button>
         <button class="tab-btn" data-fluxo="requisicao">📋 1. Requisição</button>
@@ -30,10 +35,10 @@
     </nav>
     
     <main class="grid">
-        <!-- SEÇÃO ESQUERDA: FORMULÁRIOS -->
+        <!-- SEÇÃO ESQUERDA: FORMULÁRIOS DINÂMICOS -->
         <section class="card form-section no-print">
             
-            <!-- FORMULÁRIO 0: CADASTRO -->
+            <!-- FORMULÁRIO 0: CADASTRO MESTRE -->
             <div id="panel-cadastro" class="form-panel active">
                 <h2>Cadastrar Novo Item no Catálogo</h2>
                 <form id="form-cadastro" novalidate>
@@ -115,7 +120,7 @@
                 </form>
             </div>
 
-            <!-- FORMULÁRIO 4: CORTE -->
+            <!-- FORMULÁRIO 4: CORTE (AUDITORIA) -->
             <div id="panel-corte" class="form-panel">
                 <h2>Lançar Contagem Física (Corte)</h2>
                 <form id="form-corte" novalidate>
@@ -135,8 +140,8 @@
 
         </section>
 
-        <!-- SEÇÃO DIREITA: TABELAS E IMPRESSÃO -->
-        <section class="card display-section">
+        <!-- SEÇÃO DIREITA: GRID DE MONITORAMENTO E TABELAS REATIVAS -->
+        <section class="card display-section" id="section-render-alvo">
             <h2 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h2>
             
             <!-- Tabela 0: Catálogo -->
@@ -188,42 +193,43 @@
                 </table>
             </div>
 
+            <!-- PAINEL DE CONTROLE DE EXPORTAÇÕES -->
             <footer class="panel-footer no-print">
-                <button class="print-btn" id="btn-imprimir">🖨️ Imprimir Arquivo</button>
-                <button class="email-btn" id="btn-trigger-email">📧 Enviar por E-mail</button>
-                <button class="clear-btn" id="btn-trigger-modal">🗑️ Limpar Todo Histórico</button>
+                <button type="button" class="print-btn" id="btn-imprimir">🖨️ Imprimir Arquivo</button>
+                <button type="button" class="email-btn" id="btn-trigger-email">📧 Enviar por E-mail</button>
+                <button type="button" class="clear-btn" id="btn-trigger-modal">🗑️ Limpar Todo Histórico</button>
             </footer>
         </section>
     </main>
 </div>
 
-<!-- MODAL 1: EXPORTAÇÃO VIA E-MAIL -->
+<!-- MODAL 1: MOTOR DE EXPORTAÇÃO E VALIDAÇÃO DE E-MAIL -->
 <div class="modal-overlay" id="modal-email" role="dialog" aria-hidden="true">
     <div class="modal-box">
-        <h3>📧 Exportar Histórico Atual</h3>
-        <p>Insira um endereço de e-mail válido para liberar a exportação dos dados da aba ativa.</p>
+        <h3>📧 Exportar Histórico Ativo</h3>
+        <p>Insira um endereço de e-mail corporativo válido para liberar a compilação local do arquivo.</p>
         
         <form id="form-exportar-email" novalidate>
             <div class="form-group style-email-container">
                 <label for="email-destino">E-mail do Destinatário</label>
                 <div class="input-icon-wrapper">
                     <input type="email" id="email-destino" placeholder="exemplo@empresa.com" required autocomplete="off">
-                    <span id="email-status-icon" class="status-icon" title="Aguardando digitação">⚪</span>
+                    <span id="email-status-icon" class="status-icon" title="Aguardando dados">⚪</span>
                 </div>
-                <small id="email-feedback-text">Insira um e-mail para validação na rede.</small>
+                <small id="email-feedback-text">Insira um e-mail para validação ativa de DNS/MX.</small>
             </div>
 
             <div class="form-group">
-                <label>Selecione o Formato do Arquivo</label>
+                <label>Selecione o Formato do Relatório</label>
                 <div class="radio-group">
                     <label class="radio-label">
-                        <input type="radio" name="formato-doc" value="EXCEL" checked> 📊 Excel (.xlsx)
+                        <input type="radio" name="formato-doc" value="EXCEL" checked> 📊 Planilha Excel (.xlsx)
                     </label>
                     <label class="radio-label">
-                        <input type="radio" name="formato-doc" value="PDF"> 📄 PDF (.pdf)
+                        <input type="radio" name="formato-doc" value="PDF"> 📄 Documento PDF (.pdf)
                     </label>
                     <label class="radio-label">
-                        <input type="radio" name="formato-doc" value="AMBOS"> 🗂️ Ambos (Excel e PDF)
+                        <input type="radio" name="formato-doc" value="AMBOS"> 🗂️ Ambos os Formatos (Excel e PDF)
                     </label>
                 </div>
             </div>
@@ -236,14 +242,14 @@
     </div>
 </div>
 
-<!-- MODAL 2: CONFIRMAÇÃO DE EXCLUSÃO -->
+<!-- MODAL 2: CONFIRMAÇÃO DE SEGURANÇA (PURGE DATA) -->
 <div class="modal-overlay" id="modal-alerta" role="dialog" aria-hidden="true">
     <div class="modal-box">
-        <h3>⚠️ Alerta de Exclusão</h3>
-        <p>Confirma a limpeza de todo o ecossistema de dados? Esta operação é irreversível.</p>
+        <h3>⚠️ Destruição de Histórico</h3>
+        <p>Esta ação irá remover todos os registros salvos em catálogo e movimentação de forma permanente. Continuar?</p>
         <div class="modal-buttons">
-            <button class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
-            <button class="btn-modal-confirm" id="btn-modal-confirm">Sim, Apagar Tudo</button>
+            <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
+            <button type="button" class="btn-modal-confirm" id="btn-modal-confirm">Sim, Apagar Tudo</button>
         </div>
     </div>
 </div>

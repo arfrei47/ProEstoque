@@ -1,5 +1,5 @@
 /**
- * db.js - Abstração da Camada de Persistência via LocalStorage
+ * db.js - Camada de Persistência via LocalStorage Isolada por Contexto
  */
 const DB = {
     KEYS: {
@@ -38,13 +38,16 @@ const DB = {
         localStorage.setItem(this.KEYS.CONTAGENS, JSON.stringify(dados));
     },
 
-    hasAnyData() {
-        return this.getCatalogo().length > 0 || this.getMovimentacoes().length > 0;
+    // Métodos de Purga Cirúrgica e Isolada por Chave
+    clearCatalogo() {
+        localStorage.removeItem(this.KEYS.CATALOGO);
     },
 
-    clearAll() {
-        localStorage.removeItem(this.KEYS.CATALOGO);
+    clearMovimentacoes() {
         localStorage.removeItem(this.KEYS.MOVIMENTACOES);
+    },
+
+    clearContagens() {
         localStorage.removeItem(this.KEYS.CONTAGENS);
     }
 };

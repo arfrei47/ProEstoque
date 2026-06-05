@@ -7,13 +7,11 @@
     <meta name="theme-color" content="#2b6cb0">
     <title>Controle de Suprimentos Inteligente | Enterprise</title>
     
-    <!-- Pré-conexão de Fontes para Otimização de Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 
-    <!-- Motores Externos e Seguros (CDNs) para Processamento Real de Arquivos no Cliente -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -25,7 +23,6 @@
         <p>Catálogo unificado, conciliação de saldos e inteligência de exportação nativa</p>
     </header>
 
-    <!-- MENU DE ABAS (NAVEGAÇÃO FLUIDA) -->
     <nav class="menu-fluxos no-print" aria-label="Menu de Operações">
         <button class="tab-btn active" data-fluxo="cadastro">🗂️ 0. Cadastro de Itens</button>
         <button class="tab-btn" data-fluxo="requisicao">📋 1. Requisição</button>
@@ -35,7 +32,7 @@
     </nav>
     
     <main class="grid">
-        <!-- SEÇÃO ESQUERDA: FORMULÁRIOS DINÂMICOS -->
+        <!-- SEÇÃO ESQUERDA: FORMULÁRIOS COM SEUS RESPECTIVOS BOTÕES DE LIMPEZA -->
         <section class="card form-section no-print">
             
             <!-- FORMULÁRIO 0: CADASTRO MESTRE -->
@@ -63,6 +60,7 @@
                         <input type="text" id="cad-fornecedor" placeholder="Ex: Plast Distribuidora" required autocomplete="off">
                     </div>
                     <button type="submit" class="btn-submit btn-cadastro">Salvar no Catálogo</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="cadastro">🗑️ Limpar Todo Catálogo</button>
                 </form>
             </div>
             
@@ -81,6 +79,7 @@
                         <input type="number" id="req-qtd" class="input-qtd" min="1" required>
                     </div>
                     <button type="submit" class="btn-submit btn-primary">Confirmar Requisição</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="movimentacoes">🗑️ Limpar Histórico de Movimentações</button>
                 </form>
             </div>
 
@@ -99,6 +98,7 @@
                         <input type="number" id="desc-qtd" class="input-qtd" min="1" required>
                     </div>
                     <button type="submit" class="btn-submit btn-danger">Registrar Descarte</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="movimentacoes">🗑️ Limpar Histórico de Movimentações</button>
                 </form>
             </div>
 
@@ -117,6 +117,7 @@
                         <input type="number" id="ret-qtd" class="input-qtd" min="1" required>
                     </div>
                     <button type="submit" class="btn-submit btn-success">Registrar Devolução</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="movimentacoes">🗑️ Limpar Histórico de Movimentações</button>
                 </form>
             </div>
 
@@ -125,7 +126,7 @@
                 <h2>Lançar Contagem Física (Corte)</h2>
                 <form id="form-corte" novalidate>
                     <div class="form-group">
-                        <label for="corte-insumo">Item / Insumo Avaliado</label>
+                        <label for="corte-insumo">Item / Insumo Evaluado</label>
                         <select id="corte-insumo" required>
                             <option value="">-- Selecione um Item --</option>
                         </select>
@@ -135,16 +136,16 @@
                         <input type="number" id="corte-qtd" min="0" required>
                     </div>
                     <button type="submit" class="btn-submit btn-warning">Cruzar e Validar Dados</button>
+                    <button type="button" class="btn-clear-individual btn-trigger-modal" data-target-purge="corte">🗑️ Limpar Dados de Contagem Física</button>
                 </form>
             </div>
 
         </section>
 
-        <!-- SEÇÃO DIREITA: GRID DE MONITORAMENTO E TABELAS REATIVAS -->
+        <!-- SEÇÃO DIREITA: GRID DE MONITORAMENTO -->
         <section class="card display-section" id="section-render-alvo">
             <h2 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h2>
             
-            <!-- Tabela 0: Catálogo -->
             <div class="table-container" id="container-tabela-catalogo">
                 <table id="tabela-catalogo">
                     <thead>
@@ -161,7 +162,6 @@
                 </table>
             </div>
 
-            <!-- Tabela 1: Movimentações -->
             <div class="table-container" id="container-tabela-geral" style="display: none;">
                 <table id="tabela-movimentacoes">
                     <thead>
@@ -176,7 +176,6 @@
                 </table>
             </div>
 
-            <!-- Tabela 2: Auditoria / Corte Cruzado -->
             <div class="table-container" id="container-tabela-corte" style="display: none;">
                 <table id="tabela-corte">
                     <thead>
@@ -193,17 +192,15 @@
                 </table>
             </div>
 
-            <!-- PAINEL DE CONTROLE DE EXPORTAÇÕES -->
             <footer class="panel-footer no-print">
                 <button type="button" class="print-btn" id="btn-imprimir">🖨️ Imprimir Arquivo</button>
                 <button type="button" class="email-btn" id="btn-trigger-email">📧 Enviar por E-mail</button>
-                <button type="button" class="clear-btn" id="btn-trigger-modal">🗑️ Limpar Todo Histórico</button>
             </footer>
         </section>
     </main>
 </div>
 
-<!-- MODAL 1: MOTOR DE EXPORTAÇÃO E VALIDAÇÃO DE E-MAIL -->
+<!-- MODAL 1: EXPORTAÇÃO E E-MAIL -->
 <div class="modal-overlay" id="modal-email" role="dialog" aria-hidden="true">
     <div class="modal-box">
         <h3>📧 Exportar Histórico Ativo</h3>
@@ -214,7 +211,7 @@
                 <label for="email-destino">E-mail do Destinatário</label>
                 <div class="input-icon-wrapper">
                     <input type="email" id="email-destino" placeholder="exemplo@empresa.com" required autocomplete="off">
-                    <span id="email-status-icon" class="status-icon" title="Aguardando dados">⚪</span>
+                    <span id="email-status-icon" class="status-icon">⚪</span>
                 </div>
                 <small id="email-feedback-text">Insira um e-mail para validação ativa de DNS/MX.</small>
             </div>
@@ -242,14 +239,14 @@
     </div>
 </div>
 
-<!-- MODAL 2: CONFIRMAÇÃO DE SEGURANÇA (PURGE DATA) -->
+<!-- MODAL 2: CONFIRMAÇÃO DE SEGURANÇA SELETIVA -->
 <div class="modal-overlay" id="modal-alerta" role="dialog" aria-hidden="true">
     <div class="modal-box">
-        <h3>⚠️ Destruição de Histórico</h3>
-        <p>Esta ação irá remover todos os registros salvos em catálogo e movimentação de forma permanente. Continuar?</p>
+        <h3>⚠️ Destruição de Histórico Específico</h3>
+        <p id="texto-aviso-modal">Esta ação removerá permanentemente os registros selecionados. Continuar?</p>
         <div class="modal-buttons">
             <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
-            <button type="button" class="btn-modal-confirm" id="btn-modal-confirm">Sim, Apagar Tudo</button>
+            <button type="button" class="btn-modal-confirm" id="btn-modal-confirm" style="background-color: var(--danger); color: white;">Sim, Apagar Dados</button>
         </div>
     </div>
 </div>

@@ -1,12 +1,13 @@
 /**
- * script.js - Controladora de Interface, Compilação de Arquivos e Disparo de E-mail
+ * script.js - Controladora de Interface, Filtros de Purga de Dados Contextuais e Mailto
  */
 document.addEventListener('DOMContentLoaded', () => {
     let fluxoAtivo = 'cadastro';
     let emailValidadoOK = false;
     let timeoutValidacao = null;
+    let alvoPurgaContextual = null; // Armazena temporariamente o escopo a ser excluído
 
-    // Elementos de Layout de Abas e Seções
+    // Elementos de Abas e Seções
     const tabButtons = document.querySelectorAll('.tab-btn');
     const formPanels = document.querySelectorAll('.form-panel');
     const painelDireitoTitulo = document.getElementById('titulo-painel-direito');
@@ -19,10 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const corpoCorte = document.getElementById('corpo-corte');
     const dropdownsInsumos = document.querySelectorAll('select[id$="-insumo"], .select-insumo');
 
-    // Modais e Botões de Ação Final
+    // Modais e Triggers Contextuais
     const modalAlerta = document.getElementById('modal-alerta');
+    const textoAvisoModal = document.getElementById('texto-aviso-modal');
     const modalEmail = document.getElementById('modal-email');
-    const btnTriggerModal = document.getElementById('btn-trigger-modal');
     const btnTriggerEmail = document.getElementById('btn-trigger-email');
     const btnImprimir = document.getElementById('btn-imprimir');
 
@@ -31,20 +32,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnEmailCancel = document.getElementById('btn-email-cancel');
     const formExportarEmail = document.getElementById('form-exportar-email');
     
-    // Elementos do Mecanismo de Validação Remota de E-mail
     const inputEmailDestino = document.getElementById('email-destino');
     const iconEmailStatus = document.getElementById('email-status-icon');
     const txtEmailFeedback = document.getElementById('email-feedback-text');
     const btnEmailSubmit = document.getElementById('btn-email-submit');
 
-    // Retorna dinamicamente a referência do elemento Node da tabela ativa para compilação externa
     function obterTabelaAtiva() {
         if (fluxoAtivo === 'cadastro') return document.getElementById('tabela-catalogo');
         if (fluxoAtivo === 'corte') return document.getElementById('tabela-corte');
         return document.getElementById('tabela-movimentacoes');
     }
 
-    // Gerenciador Reativo de Abas
+    // Gerenciador de Abas
     tabButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             alternarAbas(e.target.getAttribute('data-fluxo'), e.target);
@@ -75,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             containerGeral.style.display = "block";
             renderizarHistorico();
         }
-        atualizarTravaBotaoLimpar();
+        travarBotoesLimpezaVazios();
     }
 
     function formatarData() {
@@ -83,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Verificador Universal de Integridade de Inputs (Anti-Vazio)
     function validarFormularioCampos(formElement) {
         const inputs = formElement.querySelectorAll('input, select');
         let status = true;
@@ -97,14 +95,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        if (!status) {
-            alert("⚠️ Erro de Preenchimento: Certifique-se de que todos os campos obrigatórios foram preenchidos.");
-        }
+        if (!status) { alert("⚠️ Erro de Preenchimento: Certifique-se de que preencheu todos os campos obrigatórios."); }
         return status;
     }
 
-    function atualizarTravaBotaoLimpar() {
-        btnTriggerModal.disabled = !DB.hasAnyData();
+    // Gerenciador de Estado de Botões Independentes de Limpeza
+    function travarBotoesLimpezaVazios() {
+        const btnLimparCatalogo = document.querySelector('[data-target-purge="cadastro"]');
+        const btnsLimparMovimentacoes = document.querySelectorAll('[data-target-purge="movimentacoes"]');
+        const btnLimparCorte = document.querySelector('[data-target-purge="corte"]');
+
+        if(btnLimparCatalogo) btnLimparCatalogo.disabled = (DB.getCatalogo().length === 0);
+        
+        btnsLimparMovimentacoes.forEach(b => {
+            b.disabled = (DB.getMovimentacoes().length === 0);
+        });
+
+        if(btnLimparCorte) {
+            btnLimparCorte.disabled = (Object.keys(DB.getContagens()).length === 0);
+        }
     }
 
     function atualizarDropdownsItens() {
@@ -120,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Processamento de Cadastros e Movimentações
+    // Submissões de Formulários
     const formCadastro = document.getElementById('form-cadastro');
     formCadastro.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -133,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fornecedor = document.getElementById('cad-fornecedor').value.trim().toUpperCase();
 
         if (DB.getCatalogo().some(i => i.codigo === codigo || i.item === item)) {
-            alert("🚨 Erro: Este código ou nome de insumo já existe no sistema.");
+            alert("🚨 Erro: Este código ou nome de insumo já existe.");
             return;
         }
 
@@ -141,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         atualizarDropdownsItens();
         renderizarCatalogo();
         formCadastro.reset();
-        atualizarTravaBotaoLimpar();
+        travarBotoesLimpezaVazios();
     });
 
     ['requisicao', 'descarte', 'retorno'].forEach(tipo => {
@@ -157,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             DB.saveMovimentacao({ data: formatarData(), insumo, tipo: mapa[tipo], quantidade: qtd });
             renderizarHistorico();
             form.reset();
-            atualizarTravaBotaoLimpar();
+            travarBotoesLimpezaVazios();
         });
     });
 
@@ -172,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DB.saveCorte(insumo, { quantidade: qtdFisica, dataValidacao: formatarData() });
         renderizarCorte();
         formCorte.reset();
-        atualizarTravaBotaoLimpar();
+        travarBotoesLimpezaVazios();
     });
 
     function calcularSaldoLogico(insumoNome) {
@@ -185,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
     }
 
-    // Renderizadores de Linhas das Tabelas
+    // Renderizadores das Tabelas
     function renderizarCatalogo() {
         corpoCatalogo.innerHTML = '';
         const itens = DB.getCatalogo();
@@ -261,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🌐 ENGINE DE VALIDAÇÃO DE E-MAIL EM TEMPO REAL (DEBOUNCE 850MS)
+    // Validação de E-mail
     inputEmailDestino.addEventListener('input', () => {
         clearTimeout(timeoutValidacao);
         emailValidadoOK = false;
@@ -285,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         iconEmailStatus.textContent = '🔄';
-        txtEmailFeedback.textContent = 'Checando MX e barramento de rede...';
+        txtEmailFeedback.textContent = 'Checando barramento MX corporativo...';
         txtEmailFeedback.style.color = 'var(--warning)';
 
         timeoutValidacao = setTimeout(() => {
@@ -294,13 +303,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (dominiosInvalidos.includes(dominio)) {
                 iconEmailStatus.textContent = '❌';
-                txtEmailFeedback.textContent = 'Domínio inacessível ou sem registros MX válidos.';
+                txtEmailFeedback.textContent = 'Domínio ilegível ou sem registros MX.';
                 txtEmailFeedback.style.color = 'var(--danger)';
-                emailValidadoOK = false;
-                btnEmailSubmit.disabled = true;
             } else {
                 iconEmailStatus.textContent = '✅';
-                txtEmailFeedback.textContent = 'E-mail verificado com sucesso na rede local!';
+                txtEmailFeedback.textContent = 'E-mail pronto para transmissão!';
                 txtEmailFeedback.style.color = 'var(--success)';
                 emailValidadoOK = true;
                 btnEmailSubmit.disabled = false;
@@ -308,29 +315,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 850);
     });
 
-    // 📊 FUNÇÃO DE COMPILAÇÃO EXCEL REAL (SHEETJS)
+    // Motores de Exportação
     function processarPlanilhaExcel(tabela, nomeArquivo) {
         const wb = XLSX.utils.table_to_book(tabela, { sheet: "Relatorio_Inventario" });
         XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
     }
 
-    // 📄 FUNÇÃO DE COMPILAÇÃO PDF REAL (HTML2PDF)
     function processarDocumentoPDF(tabela, nomeArquivo) {
         const opcoes = {
             margin: 12,
             filename: `${nomeArquivo}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
         };
         html2pdf().set(opcoes).from(tabela).save();
     }
 
-    // 🛠️ NOVO MOTOR DE EXPORTAÇÃO COMPLETA: GERA DADOS E DISPARA PARA O CLIENTE DE E-MAIL DO SO
     function extrairConteudoTabelaParaTexto(tabela) {
         let texto = "";
         const linhas = tabela.querySelectorAll("tr");
-        
         linhas.forEach((linha) => {
             const celulas = linha.querySelectorAll("th, td");
             const dadosLinha = Array.from(celulas).map(c => c.textContent.trim());
@@ -339,80 +343,87 @@ document.addEventListener('DOMContentLoaded', () => {
         return texto;
     }
 
-    // Submissão Integrada do Formulário de Exportação
     formExportarEmail.addEventListener('submit', (e) => {
         e.preventDefault();
         if (!validarFormularioCampos(formExportarEmail)) return;
-        if (!emailValidadoOK) {
-            alert("🚨 Erro Crítico: Ação bloqueada. Aguarde ou corrija a validação do e-mail.");
-            return;
-        }
+        if (!emailValidadoOK) return;
 
         const formato = formExportarEmail.querySelector('input[name="formato-doc"]:checked').value;
         const eAddress = inputEmailDestino.value.trim();
         const tabelaAlvo = obterTabelaAtiva();
         const hashArquivo = `Relatorio_${fluxoAtivo.toUpperCase()}_${Date.now()}`;
 
-        // 1. Executa a compilação local física para auditoria do usuário
-        if (formato === 'EXCEL' || formato === 'AMBOS') {
-            processarPlanilhaExcel(tabelaAlvo, hashArquivo);
-        }
-        if (formato === 'PDF' || formato === 'AMBOS') {
-            processarDocumentoPDF(tabelaAlvo, hashArquivo);
-        }
+        if (formato === 'EXCEL' || formato === 'AMBOS') processarPlanilhaExcel(tabelaAlvo, hashArquivo);
+        if (formato === 'PDF' || formato === 'AMBOS') processarDocumentoPDF(tabelaAlvo, hashArquivo);
 
-        // 2. Transmissão nativa dos dados estruturados via protocolo Mailto (Disparo Real do Front)
         const relatorioTexto = extrairConteudoTabelaParaTexto(tabelaAlvo);
         const assuntoEmail = encodeURIComponent(`📊 Relatório de Inventário - Módulo: ${fluxoAtivo.toUpperCase()}`);
-        
         const corpoEmail = encodeURIComponent(
-            `Prezado(a),\n\n` +
-            `Segue em anexo o relatório gerado pelo Sistema de Suprimentos.\n` +
-            `Os arquivos físicos nos formatos selecionados ([${formato}]) foram baixados no seu dispositivo.\n\n` +
-            `=== RESUMO DOS DADOS DO RELATÓRIO ===\n` +
-            `${relatorioTexto}\n` +
-            `=====================================\n\n` +
-            `Gerado em: ${formatarData()}\n` +
-            `ID de Validação do Relatório: ${hashArquivo}\n`
+            `Prezado(a),\n\nSegue o relatório gerado via sistema referente à aba [${fluxoAtivo.toUpperCase()}].\n\n` +
+            `=== DADOS ESTRUTURADOS ===\n${relatorioTexto}==========================\n\n` +
+            `Gerado em: ${formatarData()}\nID do Arquivo: ${hashArquivo}`
         );
 
-        // Dispara a intent do sistema operacional para enviar o e-mail preenchido
         window.location.href = `mailto:${eAddress}?subject=${assuntoEmail}&body=${corpoEmail}`;
 
-        alert(`🚀 Processamento Concluído!\n\n1. O download do arquivo foi iniciado.\n2. O seu aplicativo de e-mail padrão foi aberto com os dados preenchidos para enviar para: ${eAddress}`);
-        
         modalEmail.classList.remove('active');
         formExportarEmail.reset();
         iconEmailStatus.textContent = '⚪';
     });
 
-    // Controle dos Modais
-    btnTriggerEmail.addEventListener('click', () => {
-        modalEmail.classList.add('active');
-        inputEmailDestino.focus();
-    });
-    btnEmailCancel.addEventListener('click', () => {
-        modalEmail.classList.remove('active');
-        formExportarEmail.reset();
-        iconEmailStatus.textContent = '⚪';
+    // 🛠️ MAPEADOR INTERNO DE INTERCEPTAÇÃO DOS BOTÕES DE LIMPEZA ESPECÍFICOS
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('btn-trigger-modal')) {
+            alvoPurgaContextual = e.target.getAttribute('data-target-purge');
+            
+            // Personaliza o texto do modal dinamicamente com base no contexto clicado
+            if (alvoPurgaContextual === 'cadastro') {
+                textoAvisoModal.textContent = "⚠️ ATENÇÃO: Esta ação deletará TODOS os itens cadastrados no catálogo de forma permanente. As movimentações salvas continuarão salvas.";
+            } else if (alvoPurgaContextual === 'movimentacoes') {
+                textoAvisoModal.textContent = "⚠️ ATENÇÃO: Esta ação apagará de forma definitiva TODAS as movimentações de requisição, descarte e retorno do sistema.";
+            } else if (alvoPurgaContextual === 'corte') {
+                textoAvisoModal.textContent = "⚠️ ATENÇÃO: Esta ação removerá apenas os registros e contagens auditadas do fluxo de corte físico.";
+            }
+
+            modalAlerta.classList.add('active');
+        }
     });
 
-    btnTriggerModal.addEventListener('click', () => modalAlerta.classList.add('active'));
-    btnModalCancel.addEventListener('click', () => modalAlerta.classList.remove('active'));
-    btnModalConfirm.addEventListener('click', () => {
-        DB.clearAll();
+    btnModalCancel.addEventListener('click', () => {
         modalAlerta.classList.remove('active');
-        atualizarDropdownsItens();
-        alternarAbas('cadastro', tabButtons[0]);
+        alvoPurgaContextual = null;
     });
 
-    // Gatilho de Impressão Física
-    btnImprimir.addEventListener('click', () => {
-        window.print();
+    // Executa a purga específica solicitada pelo formulário ativo
+    btnModalConfirm.addEventListener('click', () => {
+        if (alvoPurgaContextual === 'cadastro') {
+            DB.clearCatalogo();
+            atualizarDropdownsItens();
+            renderizarCatalogo();
+        } else if (alvoPurgaContextual === 'movimentacoes') {
+            DB.clearMovimentacoes();
+            renderizarHistorico();
+        } else if (alvoPurgaContextual === 'corte') {
+            DB.clearContagens();
+            renderizarCorte();
+        }
+
+        modalAlerta.classList.remove('active');
+        alvoPurgaContextual = null;
+        travarBotoesLimpezaVazios();
+        
+        // Sincroniza a visualização com base na aba atual
+        if (fluxoAtivo === 'cadastro') renderizarCatalogo();
+        else if (fluxoAtivo === 'corte') renderizarCorte();
+        else renderizarHistorico();
     });
 
-    // Inicialização do Escopo do App
+    btnTriggerEmail.addEventListener('click', () => { modalEmail.classList.add('active'); inputEmailDestino.focus(); });
+    btnEmailCancel.addEventListener('click', () => { modalEmail.classList.remove('active'); formExportarEmail.reset(); iconEmailStatus.textContent = '⚪'; });
+    btnImprimir.addEventListener('click', () => window.print());
+
+    // Inicialização do Escopo Geral
     atualizarDropdownsItens();
     renderizarCatalogo();
-    atualizarTravaBotaoLimpar();
+    travarBotoesLimpezaVazios();
 });

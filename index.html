@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <!-- Bibliotecas necessárias para o instalador offline automático -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="login-body">
@@ -35,14 +34,13 @@
 
     <div class="backup-section">
         <p>Necessita operar em modo desconectado (Offline)?</p>
-        <button type="button" id="btn-baixar-codigo" class="btn-clear-individual" style="border-style: solid; background: var(--gray-light);">
+        <button type="button" id="btn-baixar-codigo" class="btn-clear-individual" style="border-style: solid; background: var(--gray-light); margin-top: 5px;">
             💾 Baixar Sistema Completo (.ZIP)
         </button>
     </div>
 </div>
 
 <script>
-    // Gerencia o fluxo de login local salvando o perfil em sessão antes do redirecionamento
     document.getElementById('form-autenticacao').addEventListener('submit', (e) => {
         e.preventDefault();
         const perfil = document.getElementById('seletor-perfil').value;
@@ -50,7 +48,6 @@
         window.location.href = 'painel.html';
     });
 
-    // Função Avançada: Compila o projeto e entrega um download limpo em ZIP para o cliente
     document.getElementById('btn-baixar-codigo').addEventListener('click', async () => {
         const btn = document.getElementById('btn-baixar-codigo');
         btn.textContent = "⌛ Compilando pacotes...";
@@ -58,8 +55,6 @@
 
         try {
             const zip = new JSZip();
-            
-            // Mapeamento dos arquivos para download recursivo baseado na árvore local
             const caminhos = [
                 'index.html', 'painel.html', 'css/style.css', 
                 'javascript/LocalStorage/db.js', 'javascript/script.js'
@@ -72,7 +67,9 @@
                         const texto = await response.text();
                         zip.file(path, texto);
                     }
-                } catch (err) { console.error(`Falha ao empacotar arquivo local: ${path}`, err); }
+                } catch (err) { 
+                    console.error(`Falha ao empacotar arquivo local: ${path}`, err); 
+                }
             }
 
             const content = await zip.generateAsync({ type: "blob" });

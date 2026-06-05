@@ -1,5 +1,5 @@
 /**
- * db.js - Camada de Dados e Regras de Negócio do LocalStorage
+ * db.js - Camada Estrita de Persistência no LocalStorage
  */
 const DB = {
     KEYS: {
@@ -18,7 +18,6 @@ const DB = {
         localStorage.setItem(this.KEYS.CATALOGO, JSON.stringify(catalogo));
     },
 
-    // Remove um item individual do catálogo filtrando por seu código único
     deleteCatalogoItem(codigo) {
         let catalogo = this.getCatalogo();
         catalogo = catalogo.filter(i => i.codigo !== codigo);

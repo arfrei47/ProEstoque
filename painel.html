@@ -17,12 +17,12 @@
 
 <div class="container">
     <header class="main-header no-print">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div style="text-align: left;">
-                <h1>📦 Terminal de Suprimentos & Inventário</h1>
-                <p>Nível de Acesso: <span id="label-perfil" style="font-weight: bold; color: var(--primary);">Apontador</span></p>
+                <h1 style="font-size: 1.6rem; margin: 0;">📦 Terminal de Suprimentos & Inventário</h1>
+                <p style="margin: 4px 0 0 0;">Nível de Acesso: <span id="label-perfil" style="font-weight: bold; color: var(--primary);">Carregando...</span></p>
             </div>
-            <button type="button" id="btn-sair-terminal" class="btn-clear-individual" style="width: auto; padding: 10px 20px; border-style: solid; background: #fff;">🚪 Sair do Sistema</button>
+            <button type="button" id="btn-sair-terminal" class="btn-clear-individual" style="width: auto; padding: 10px 20px; border-style: solid; background: #fff; margin-top: 0;">Automático</button>
         </div>
     </header>
 
@@ -35,7 +35,7 @@
     </nav>
     
     <main class="grid">
-        <!-- FORMULÁRIOS OPERACIONAIS (ESQUERDA) -->
+        <!-- FORMULÁRIOS OPERACIONAIS -->
         <section class="card form-section no-print">
             
             <div id="panel-cadastro" class="form-panel active">
@@ -129,7 +129,7 @@
 
         </section>
 
-        <!-- QUADROS DE EXIBIÇÃO EM TEMPO REAL (DIREITA) -->
+        <!-- QUADROS DE EXIBIÇÃO DE DADOS -->
         <section class="card display-section" id="section-render-alvo">
             <h2 id="titulo-painel-direito">Catálogo de Itens Cadastrados</h2>
             
@@ -152,7 +152,7 @@
 
             <div class="table-container" id="container-tabela-geral" style="display: none;">
                 <p class="no-print" style="margin: 8px 12px; font-size:0.8rem; color:#718096; font-style:italic;">
-                    * Exibindo apenas os 5 registros mais recentes na tela. O relatório completo e e-mail exportarão o banco integral de auditoria.
+                    * Exibindo apenas as 5 movimentações mais recentes (Histórico Permanente).
                 </p>
                 <table id="tabela-movimentacoes">
                     <thead>
@@ -221,11 +221,11 @@
     </div>
 </div>
 
-<!-- MODAL: CONFIRMAÇÃO DE DESTRUIÇÃO SELETIVA -->
+<!-- MODAL: CONFIRMAÇÕES DE DELETAR -->
 <div class="modal-overlay" id="modal-alerta" role="dialog" aria-hidden="true">
     <div class="modal-box">
         <h3>⚠️ Controle de Exclusão</h3>
-        <p id="texto-aviso-modal">Deseja prosseguir?</p>
+        <p id="texto-aviso-modal">Deseja prosseguir com essa ação?</p>
         <div class="modal-buttons">
             <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">Cancelar</button>
             <button type="button" class="btn-modal-confirm" id="btn-modal-confirm" style="background-color: var(--danger); color: white;">Confirmar Ação</button>

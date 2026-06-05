@@ -1,15 +1,14 @@
 /**
- * script.js - Arquivo Controlador de Renderização, Proteção de Rotas e Mailto
+ * script.js - Arquivo Controlador de Renderização e Fluxo Logístico
  */
 document.addEventListener('DOMContentLoaded', () => {
-    // Sistema Segura de Rota Local baseada na Sessão
-    const perfilAtivo = sessionStorage.getItem('perfil_ativo');
+    // Verificação de segurança de acesso
+    const perfilAtivo = sessionStorage.getItem('perfil_active') || sessionStorage.getItem('perfil_ativo');
     if (!perfilAtivo) {
         window.location.href = 'index.html';
         return;
     }
 
-    // Identifica visualmente o nível do usuário no cabeçalho
     const labelPerfil = document.getElementById('label-perfil');
     if(labelPerfil) {
         labelPerfil.textContent = perfilAtivo === 'operador' ? '🔧 Operador Logístico' : '🎯 Apontador';
@@ -19,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let emailValidadoOK = false;
     let timeoutValidacao = null;
     let alvoPurgaContextual = null; 
-    let itemCodigoParaExcluir = null; // Armazena contexto de exclusão unitária
+    let itemCodigoParaExcluir = null;
 
     // Seletores DOM
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -43,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const txtEmailFeedback = document.getElementById('email-feedback-text');
     const btnEmailSubmit = document.getElementById('btn-email-submit');
 
-    // Botão de Logout
+    // Botão de Logout para o index
+    document.getElementById('btn-sair-terminal').textContent = "🚪 Sair do Sistema";
     document.getElementById('btn-sair-terminal').addEventListener('click', () => {
         sessionStorage.clear();
         window.location.href = 'index.html';
@@ -94,8 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const inputs = formElement.querySelectorAll('input, select');
         let status = true;
         inputs.forEach(campo => {
-            if (campo.type !== 'radio' && !campo.value.trim()) { status = false; campo.style.borderColor = 'var(--danger)'; }
-            else { campo.style.borderColor = 'var(--border)'; }
+            if (campo.type !== 'radio' && !campo.value.trim()) { 
+                status = false; 
+                campo.style.borderColor = 'var(--danger)'; 
+            } else { 
+                campo.style.borderColor = 'var(--border)'; 
+            }
         });
         return status;
     }
@@ -113,13 +117,14 @@ document.addEventListener('DOMContentLoaded', () => {
             select.innerHTML = '<option value="">-- Selecione um Item --</option>';
             itens.forEach(it => {
                 const opt = document.createElement('option');
-                opt.value = it.item; opt.textContent = `${it.codigo} - ${it.item}`;
+                opt.value = it.item; 
+                opt.textContent = `${it.codigo} - ${it.item}`;
                 select.appendChild(opt);
             });
         });
     }
 
-    // Manipuladores de Cadastro e Lançamento
+    // Formulários - Submit Actions
     document.getElementById('form-cadastro').addEventListener('submit', (e) => {
         e.preventDefault();
         const form = e.target;
@@ -132,16 +137,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const fornecedor = document.getElementById('cad-fornecedor').value.trim().toUpperCase();
 
         if (DB.getCatalogo().some(i => i.codigo === codigo || i.item === item)) {
-            alert("🚨 Código ou nome de insumo já cadastrado."); return;
+            alert("🚨 Código ou nome de insumo já cadastrado."); 
+            return;
         }
 
         DB.saveCatalogoItem({ dataCad: formatarData(), codigo, item, caixa, palete, fornecedor });
-        atualizarDropdownsItens(); renderizarCatalogo(); form.reset(); travarBotoesLimpezaVazios();
+        atualizarDropdownsItens(); 
+        renderizarCatalogo(); 
+        form.reset(); 
+        travarBotoesLimpezaVazios();
     });
 
     ['requisicao', 'descarte', 'retorno'].forEach(tipo => {
         document.getElementById(`form-${tipo}`).addEventListener('submit', (e) => {
-            e.preventDefault(); const form = e.target;
+            e.preventDefault(); 
+            const form = e.target;
             if (!validarFormularioCampos(form)) return;
 
             const insumo = form.querySelector('select').value;
@@ -155,16 +165,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('form-corte').addEventListener('submit', (e) => {
-        e.preventDefault(); const form = e.target;
+        e.preventDefault(); 
+        const form = e.target;
         if (!validarFormularioCampos(form)) return;
         const insumo = document.getElementById('corte-insumo').value;
         const qtdFisica = parseInt(document.getElementById('corte-qtd').value) || 0;
 
         DB.saveCorte(insumo, { quantidade: qtdFisica, dataValidacao: formatarData() });
-        renderizarCorte(); form.reset(); travarBotoesLimpezaVazios();
+        renderizarCorte(); 
+        form.reset(); 
+        travarBotoesLimpezaVazios();
     });
 
-    // Renderizadores Dinâmicos das Tabelas do Painel
+    // Renderização das Tabelas no Painel
     function renderizarCatalogo() {
         corpoCatalogo.innerHTML = '';
         const itens = DB.getCatalogo();
@@ -177,9 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.innerHTML = `<td>${i.dataCad}</td><td>${i.codigo}</td><td><strong>${i.item}</strong></td><td>${i.caixa}</td><td>${i.palete}</td><td>${i.fornecedor}</td><td class="no-print"><button type="button" class="btn-delete-row" data-codigo="${i.codigo}">🗑️</button></td>`;
             corpoCatalogo.appendChild(tr);
         });
-    </div>
+    }
 
-    // Algoritmo de Corte: Filtra e exibe na tela EXCLUSIVAMENTE os 5 registros mais novos baseados na cronologia reversa
     function renderizarHistorico() {
         corpoMovimentacoes.innerHTML = '';
         const listaFull = DB.getMovimentacoes();
@@ -187,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
             corpoMovimentacoes.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#a0aec0;">Sem movimentações registradas.</td></tr>`;
             return;
         }
-        // Clona e inverte a lista (do mais recente ao mais antigo) e extrai apenas os 5 primeiros elementos
+        // Exibe em tela apenas os 5 lançamentos mais recentes
         const top5 = [...listaFull].reverse().slice(0, 5);
         top5.forEach(m => {
             const tr = document.createElement('tr');
@@ -209,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         todosInsumos.forEach(insumo => {
             if(!insumo) return;
-            // O saldo lógico processa a soma de todas as movimentações existentes no banco
             const saldoLogico = movimentos.reduce((acc, m) => {
                 if (m.insumo === insumo) {
                     if (m.tipo === 'REQUISIÇÃO') acc += m.quantidade;
@@ -239,23 +250,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Engine Avançada de Captura e Configuração de Modais Contextuais (Purga e Remoção Unitária)
+    // Deleção Seletiva e Modais Contextuais
     document.addEventListener('click', (e) => {
-        // Caso A: Clique no botão de deletar um item específico do catálogo
         if (e.target && e.target.classList.contains('btn-delete-row')) {
             itemCodigoParaExcluir = e.target.getAttribute('data-codigo');
             alvoPurgaContextual = 'UNITARIO';
-            textoAvisoModal.textContent = `⚠️ CONFIRMAÇÃO: Deseja realmente remover o item com o código [${itemCodigoParaExcluir}] do catálogo? Esta ação não afetará movimentações passadas.`;
+            textoAvisoModal.textContent = `⚠️ CONFIRMAÇÃO: Deseja realmente remover o item com o código [${itemCodigoParaExcluir}] do catálogo?`;
             modalAlerta.classList.add('active');
         }
         
-        // Caso B: Clique em botão de purga em massa do formulário ativo
         if (e.target && e.target.classList.contains('btn-trigger-modal')) {
             alvoPurgaContextual = e.target.getAttribute('data-target-purge');
             if (alvoPurgaContextual === 'cadastro') {
-                textoAvisoModal.textContent = "⚠️ ATENÇÃO CRÍTICA: Você irá apagar permanentemente TODOS os itens contidos no catálogo do sistema.";
+                textoAvisoModal.textContent = "⚠️ ATENÇÃO CRÍTICA: Você irá apagar permanentemente TODO o catálogo de itens do sistema.";
             } else if (alvoPurgaContextual === 'corte') {
-                textoAvisoModal.textContent = "⚠️ ATENÇÃO: Deseja redefinir e apagar todos os lançamentos de contagens físicas auditadas?";
+                textoAvisoModal.textContent = "⚠️ ATENÇÃO: Deseja redefinir e apagar todas as contagens físicas?";
             }
             modalAlerta.classList.add('active');
         }
@@ -286,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else renderizarHistorico();
     });
 
-    // Mecanismo de Validação Remota de E-mail
+    // Validador de E-mail
     inputEmailDestino.addEventListener('input', () => {
         clearTimeout(timeoutValidacao); emailValidadoOK = false; btnEmailSubmit.disabled = true;
         const email = inputEmailDestino.value.trim();
@@ -302,13 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dominiosInvalidos.includes(email.split('@')[1].toLowerCase())) {
                 iconEmailStatus.textContent = '❌'; txtEmailFeedback.textContent = 'Domínio inacessível.'; txtEmailFeedback.style.color = 'var(--danger)';
             } else {
-                iconEmailStatus.textContent = '✅'; txtEmailFeedback.textContent = 'Endereço validado com sucesso!'; txtEmailFeedback.style.color = 'var(--success)';
+                iconEmailStatus.textContent = '✅'; txtEmailFeedback.textContent = 'Endereço validado!'; txtEmailFeedback.style.color = 'var(--success)';
                 emailValidadoOK = true; btnEmailSubmit.disabled = false;
             }
         }, 850);
     });
 
-    // Compilação Nativa e Envio Seguro com Mailto Corporativo
+    // Envio por E-mail Corporativo e Exportação de Arquivos
     document.getElementById('form-exportar-email').addEventListener('submit', (e) => {
         e.preventDefault();
         if (!validarFormularioCampos(e.target) || !emailValidadoOK) return;
@@ -318,7 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabelaAlvo = obterTabelaAtiva();
         const hashArquivo = `Relatorio_${fluxoAtivo.toUpperCase()}_${Date.now()}`;
 
-        // Executa geração física no lado do cliente para auditoria local do usuário
         if (formato === 'EXCEL' || formato === 'AMBOS') {
             const wb = XLSX.utils.table_to_book(tabelaAlvo, { sheet: "Inventario" });
             XLSX.writeFile(wb, `${hashArquivo}.xlsx`);
@@ -328,7 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
             html2pdf().set(opcoes).from(tabelaAlvo).save();
         }
 
-        // Extrai dados textuais estruturados completos (no histórico, gera todo o banco, mitigando a trava visual de 5 itens)
         let textoRelatorio = "";
         const linhas = tabelaAlvo.querySelectorAll("tr");
         linhas.forEach(l => {
@@ -338,9 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const assuntoEmail = encodeURIComponent(`📊 Relatório Consolidado - Módulo: ${fluxoAtivo.toUpperCase()}`);
         const corpoEmail = encodeURIComponent(
-            `Prezado(a),\n\nSegue em anexo o relatório extraído do painel de suprimentos corporativo.\n\n` +
+            `Prezado(a),\n\nSegue em anexo o relatório extraído do painel.\n\n` +
             `=== DADOS DA TABELA ATIVA ===\n${textoRelatorio}=============================\n\n` +
-            `Extraído em: ${formatarData()}\nChave Única do Relatório: ${hashArquivo}`
+            `Extraído em: ${formatarData()}\nChave Única: ${hashArquivo}`
         );
 
         window.location.href = `mailto:${eAddress}?subject=${assuntoEmail}&body=${corpoEmail}`;
@@ -351,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-email-cancel').addEventListener('click', () => { modalEmail.classList.remove('active'); document.getElementById('form-exportar-email').reset(); iconEmailStatus.textContent = '⚪'; });
     document.getElementById('btn-imprimir').addEventListener('click', () => window.print());
 
-    // Execuções Iniciais Obrigatórias de Escopo
+    // Inicialização da Viewport
     atualizarDropdownsItens();
     renderizarCatalogo();
     travarBotoesLimpezaVazios();

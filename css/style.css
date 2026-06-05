@@ -16,9 +16,7 @@
 body { font-family: 'Inter', system-ui, sans-serif; background-color: #edf2f7; margin: 0; padding: 24px; color: var(--dark); }
 .container { max-width: 1500px; margin: 0 auto; }
 .main-header { text-align: center; margin-bottom: 24px; background: white; padding: 15px 24px; border-radius: var(--radius); border: 1px solid var(--border); }
-.main-header h1 { font-size: 1.6rem; margin: 0; color: #1a202c; }
 
-/* Estrutura da Página de Login */
 .login-body { display: flex; align-items: center; justify-content: center; min-height: 90vh; background-color: #f7fafc; }
 .login-card { background: white; padding: 36px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 420px; box-sizing: border-box; }
 .login-header h2 { margin: 0 0 6px 0; font-size: 1.5rem; color: var(--primary); text-align: center; }
@@ -53,9 +51,8 @@ input:focus, select:focus { border-color: var(--primary); outline: none; }
 
 .btn-clear-individual { width: 100%; background: transparent; border: 1.5px dashed #cbd5e0; color: #718096; padding: 8px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; margin-top: 4px; transition: var(--transition); }
 .btn-clear-individual:hover { background-color: var(--danger-light); color: var(--danger); border-color: var(--danger); }
-.btn-clear-individual:disabled { opacity: 0.5; cursor: not-allowed; border-color: var(--border); color: #cbd5e0; background: transparent !important; }
+.btn-clear-individual:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border); color: #cbd5e0; }
 
-/* Botão de Exclusão de Item da Linha */
 .btn-delete-row { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 2px 8px; border-radius: 4px; transition: var(--transition); }
 .btn-delete-row:hover { background: var(--danger-light); }
 
@@ -93,5 +90,4 @@ th { background-color: #edf2f7; color: #4a5568; font-weight: 600; position: stic
     .card { box-shadow: none; border: none; }
     .table-container { max-height: none; overflow: visible; }
     th { position: static; background: #f7fafc !important; border-bottom: 2px solid #000; }
-    td, th { white-space: normal !important; }
 }
